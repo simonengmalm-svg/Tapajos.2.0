@@ -44,10 +44,7 @@
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
       <!-- Viktigt: kör riktiga startGame direkt -->
-      <button class="start" id="startBtn" type="button"
-  onclick="if (window.startGame) { window.startGame(); } else { const s=document.getElementById('splash'); const a=document.getElementById('appWrap'); if(s)s.style.display='none'; if(a)a.style.display='block'; }">
-  Starta spelet
-</button>
+     <button class="start" id="startBtn" type="button">Starta spelet</button>
       <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
     </div>
   </div>
