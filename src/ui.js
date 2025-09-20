@@ -1,125 +1,158 @@
-import { state, fmt, barFillClass } from './state.js';
-import { TYPES } from './state.js';
-import { effectiveRent, effectiveMaint, valuation } from './economy.js';
-import { totalDebt } from './loans.js';
-import { condScore } from './social.js';
+// src/ui.js
+import { state, TYPES, currentYear } from './state.js';
 
-export function updateTop(){
-  const cashEl = document.getElementById('cash');
-  const marketEl = document.getElementById('market');
-  const rateEl = document.getElementById('rate');
-  const debtTopEl = document.getElementById('debtTop');
-  if (cashEl)    cashEl.textContent = fmt(state.cash);
-  if (marketEl)  marketEl.textContent = state.market.toFixed(2) + '×';
-  if (rateEl)    rateEl.textContent = (state.rate*100).toFixed(1);
-  if (debtTopEl) debtTopEl.textContent = fmt(totalDebt());
-  const y = document.getElementById('yearNow'); if (y) y.textContent = Math.min(15, state.month);
+// Små hjälpare
+const $  = (id) => document.getElementById(id);
+const qc = (sel) => document.querySelector(sel);
+
+// --------------------------------------
+// 1) Visa appen och göm splash
+// --------------------------------------
+export function showAppHideSplash() {
+  // Spara spelarnamn om fält finns
+  const name = $('#startName')?.value?.trim();
+  if (name) {
+    state.player = state.player || {};
+    state.player.name = name;
+  }
+
+  // Visa appyta / göm splash
+  const splash = $('#splash');
+  const app    = $('#app');
+  if (splash) splash.style.display = 'none';
+  if (app)    app.style.display    = 'block';
+
+  // Initial render
+  updateTop();
+  renderOwned();
 }
 
-function bar(val) {
-  const v = Math.max(0, Math.min(100, Math.round(val)));
-  const wrap = document.createElement('div');
-  wrap.className = 'bar';
-  const fill = document.createElement('div');
-  fill.className = 'fill ' + barFillClass(v);
-  fill.style.width = v + '%';
-  wrap.appendChild(fill);
-  return wrap;
-}
+// --------------------------------------
+// 2) Rendera ägda fastigheter
+// --------------------------------------
+export function renderOwned() {
+  const wrap = $('#ownedList') || $('#owned') || qc('[data-owned-list]');
+  if (!wrap) return;
 
-function mkBarRow(label, value) {
-  const row = document.createElement('div');
-  row.style.display = 'grid';
-  row.style.gridTemplateColumns = '120px 1fr';
-  row.style.alignItems = 'center';
-  row.style.gap = '10px';
-  const lbl = document.createElement('div');
-  lbl.textContent = label;
-  lbl.className = 'meta';
-  row.append(lbl, bar(value));
-  return row;
-}
+  // Töm
+  wrap.innerHTML = '';
 
-export function renderOwned(){
-  const propsEl = document.getElementById('props');
-  if (!propsEl) return;
-  propsEl.innerHTML = '';
-
-  if (!state.owned.length){
-    propsEl.innerHTML = '<div class="meta">Du äger inga fastigheter ännu. Klicka på “Fastighetsmarknad”.</div>';
+  if (!state.owned || state.owned.length === 0) {
+    const p = document.createElement('p');
+    p.textContent = 'Du äger inga fastigheter ännu.';
+    wrap.appendChild(p);
     return;
   }
 
+  // Skapa kort för varje fastighet
   state.owned.forEach((b) => {
-    const t = TYPES[b.tid];
-
     const card = document.createElement('div');
     card.className = 'card';
 
-    const icon = document.createElement('div');
-    icon.className = `icon ${t.cls} C-${b.cond}`;
+    const title = document.createElement('div');
+    title.className = 'card-title';
 
-    const condTxt = (b.cond === 'forfallen') ? 'förfallen' : b.cond;
+    const tinfo = TYPES?.[b.tid];
+    const name  = tinfo?.name || b.tid || 'Fastighet';
+    title.textContent = `${name} – ${b.units ?? '?'} st lgh`;
 
-    const text = document.createElement('div');
-    text.innerHTML =
-      `<div class="row"><b>${t.name}</b> ${b.central ? '• Centralt' : '• Förort'} • Lgh: <b>${b.units || b.baseUnits || '?'}</b></div>
-       <div class="meta">Skick: ${condTxt} • ${b.anekdot || ''}</div>
-       <div class="meta">Hyra/år ~ ${fmt(effectiveRent(b)*12)} kr • Drift/år ~ ${fmt(effectiveMaint(b)*12)} kr</div>
-       <div class="price">Värde ~ ${fmt(valuation(b))} kr</div>`;
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    const cond  = (typeof b.cond === 'number') ? `${b.cond}/10` : (b.cond ?? '-');
+    const price = (b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE') + ' kr';
+    meta.textContent = `Skick: ${cond} • Pris: ${price} • Central: ${b.central ? 'Ja' : 'Nej'}`;
 
     const chips = document.createElement('div');
     chips.className = 'chips';
 
-    if (b.status){
-      const chip  = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = b.status;
-      chips.appendChild(chip);
-    }
-
-    if (b.project){
-      const c = document.createElement('span');
-      c.className = 'chip';
-      c.textContent = `Projekt: ${b.project.name} (${b.project.duration} kvar)`;
-      chips.appendChild(c);
-    }
-    if (b.converting){
+    // Exempelchippar
+    if (b.converting) {
       const c = document.createElement('span');
       c.className = 'chip';
       c.textContent = `Ombildning pågår (${b.converting.duration} kvar)`;
       chips.appendChild(c);
     }
-    if (b.loanId){
+    if (b.loanSeed || b.loanId) {
       const c = document.createElement('span');
       c.className = 'chip';
-      c.textContent = `Lån kopplat`;
+      c.textContent = 'Lån kopplat';
       chips.appendChild(c);
     }
 
+    // Enkla “bars” för status (om CSS finns), valfritt
     const bars = document.createElement('div');
+    bars.className = 'bars';
     bars.style.display = 'flex';
     bars.style.flexDirection = 'column';
     bars.style.gap = '6px';
-    bars.append(mkBarRow('Nöjdhet', b.sat));
-    bars.append(mkBarRow('Skick',   condScore(b)));
 
-    card.append(icon, text, chips, bars);
-    propsEl.appendChild(card);
+    bars.appendChild(mkBarRow('Nöjdhet', percentClamp(b?.sat ?? 0)));
+    bars.appendChild(mkBarRow('Skick',    percentClamp(toPercent(b?.cond, 10))));
+
+    card.appendChild(title);
+    card.appendChild(meta);
+    card.appendChild(chips);
+    card.appendChild(bars);
+    wrap.appendChild(card);
   });
 }
 
-// Minimal, säker implementation – gör inget farligt om element saknas
+// --------------------------------------
+// 3) Topp-panel (kassa, år mm)
+// --------------------------------------
+export function updateTop() {
+  // Kassa
+  const cashEl = $('#cash') || qc('[data-cash]');
+  if (cashEl) cashEl.textContent = (state.cash ?? 0).toLocaleString('sv-SE') + ' kr';
+
+  // År
+  const yearEl = $('#year') || qc('[data-year]');
+  if (yearEl) yearEl.textContent = String(currentYear?.() ?? state.year ?? '-');
+
+  // Ägda antal
+  const ownedEl = $('#ownedCount') || qc('[data-owned-count]');
+  if (ownedEl) ownedEl.textContent = String(state.owned?.length ?? 0);
+
+  // Meddelanden (om du har badge)
+  const noteBadge = $('#noteBadge') || qc('[data-note-badge]');
+  if (noteBadge && Array.isArray(state.notes)) {
+    noteBadge.textContent = String(state.notes.length);
+    noteBadge.style.display = state.notes.length ? 'inline-flex' : 'none';
+  }
+}
+
+// --------------------------------------
+// 4) Notera meddelanden i UI
+// --------------------------------------
+export function note(msg) {
+  state.notes = state.notes || [];
+  if (msg) state.notes.push({ t: Date.now(), msg });
+
+  const list = $('#notes') || qc('[data-notes]');
+  if (!list) return;
+
+  // (Re)render lista
+  list.innerHTML = '';
+  state.notes.slice(-50).forEach((n) => {
+    const li = document.createElement('div');
+    li.className = 'note';
+    const d = new Date(n.t);
+    li.textContent = `[${d.toLocaleTimeString('sv-SE')}] ${n.msg}`;
+    list.appendChild(li);
+  });
+}
+
+// --------------------------------------
+// 5) Koppla knappar/formulär EN gång
+// --------------------------------------
 export function bindCoreButtonsOnce() {
-  // Starta spelet från startsidan (om ett formulär/knapp finns)
-  const startForm = document.getElementById('startForm');
-  const startBtn  = document.getElementById('btnStart');
+  // Startform/knapp (IDs kan du justera i index.html)
+  const startForm = $('#startForm');
+  const startBtn  = $('#btnStart');
 
   const startHandler = (e) => {
     e?.preventDefault?.();
-    // Göm splash / visa app (din funktion finns redan globalt eller i main)
-    if (typeof window.showAppHideSplash === 'function') window.showAppHideSplash();
-    // Om du har annan init-logik kan den läggas här
+    showAppHideSplash();
   };
 
   if (startForm && !startForm.dataset.wired) {
@@ -131,18 +164,52 @@ export function bindCoreButtonsOnce() {
     startBtn.dataset.wired = '1';
   }
 
-  // Market-knapp (om du har en knapp som öppnar marknad)
-  const marketBtn = document.getElementById('btnMarket');
+  // Marknadsknapp (om du har en knapp som öppnar marknad)
+  const marketBtn = $('#btnMarket');
   if (marketBtn && !marketBtn.dataset.wired) {
     marketBtn.addEventListener('click', () => {
       if (typeof window.openMarket === 'function') window.openMarket();
     });
     marketBtn.dataset.wired = '1';
   }
-
-  // Lägg ev fler kärn-knappar här på samma sätt
 }
 
+// --------------------------------------
+// Helpers för bars
+// --------------------------------------
+function mkBarRow(label, pct = 0) {
+  const row = document.createElement('div');
+  row.className = 'bar-row';
+
+  const l = document.createElement('div');
+  l.className = 'bar-label';
+  l.textContent = label;
+
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  const fill = document.createElement('div');
+  fill.className = 'bar-fill';
+  fill.style.width = `${percentClamp(pct)}%`;
+  bar.appendChild(fill);
+
+  row.appendChild(l);
+  row.appendChild(bar);
+  return row;
+}
+
+function percentClamp(v) {
+  const n = Number(v);
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+function toPercent(value, max) {
+  if (max <= 0) return 0;
+  return (Number(value || 0) / max) * 100;
+}
+
+// --------------------------------------
+// Lägg (valfritt) på window för äldre anrop
+// --------------------------------------
 Object.assign(window, {
   bindCoreButtonsOnce,
   showAppHideSplash,
