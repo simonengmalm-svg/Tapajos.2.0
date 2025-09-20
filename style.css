@@ -1,0 +1,377 @@
+:root{
+    --bg:#0e0f17; --panel:#0f1729; --accent:#ffd34d; --text:#fff; --muted:#a6b0c3;
+    --ok:#7bdcff; --warn:#ffb84d; --bad:#ff6b6b; --good:#2a8f6e; --mid:#b78834; --poor:#9b2d30; --disabled:#9ca3af;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
+  *{box-sizing:border-box}
+  .wrap{display:grid;grid-template-rows:auto 1fr; height:100%}
+  .topbar{display:flex;gap:10px;align-items:center;padding:10px 14px;background:#0b1220;border-bottom:2px solid #000;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:8px}
+  .brand img{width:40px;height:40px;image-rendering:pixelated;border:2px solid #000;border-radius:6px;background:#111}
+  .brand .brand-title{font-weight:900;letter-spacing:.2px}
+  .brand .brand-sub{font-size:12px;color:#a6b0c3}
+  @media (max-width:900px){ .brand .brand-sub{display:none} }
+  .badge{background:#0f1729;border:2px solid #000;border-radius:10px;padding:6px 10px;display:flex;gap:8px;align-items:center;white-space:nowrap}
+  .btn{background:var(--accent);border:3px solid #000;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.6);transition:transform .05s}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.6)}
+  .btn.alt{background:#7bdcff}
+  .btn.ghost{background:#fff0;color:#fff;border-color:#fff}
+  .btn[disabled]{opacity:.65; cursor:not-allowed; filter:grayscale(.3)}
+  .main{display:grid;grid-template-columns: 1fr 380px; gap:12px; padding:12px; height:calc(100vh - 82px)}
+  .panel{background:#0f1729;border:3px solid #000;border-radius:14px; padding:12px;min-height:0}
+  .panel h3{margin:0 0 8px 0}
+  .props{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;max-height:100%;overflow:auto}
+  .card{background:#0f1524;border:2px solid #000;border-radius:12px;padding:10px;display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start}
+  .icon{width:96px;height:96px;border:3px solid #000;border-radius:8px;image-rendering:pixelated}
+  .meta{color:var(--muted);font-size:12px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:11px;border:2px solid #000;border-radius:999px;padding:2px 8px}
+  .status-ok{background:var(--good)} .status-warn{background:var(--mid)} .status-bad{background:var(--poor)}
+  .bar{height:10px;background:#000;border:2px solid #000;border-radius:8px;overflow:hidden}
+  .fill{height:100%;background:#7bdcff} .fill.good{background:#2a8f6e} .fill.mid{background:#b78834} .fill.bad{background:#9b2d30}
+  .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+  .mini{font-size:12px;padding:6px 8px}
+  /* Typfärger (pixelart känsla) */
+  .T-landsh{background:linear-gradient(#784e2f 0 20%, #a76b42 20% 40%, #c99369 40% 60%, #a76b42 60% 80%, #784e2f 80% 100%),repeating-linear-gradient(90deg,#0002 0 8px,#0000 8px 16px)}
+  .T-funkis{background:linear-gradient(#98c9c6 0 30%, #cfe7e1 30% 70%, #98c9c6 70% 100%),repeating-linear-gradient(90deg,#0002 0 8px,#0000 8px 16px)}
+  .T-miljon{background:linear-gradient(#6c87a6 0 30%, #9fb3c9 30% 70%, #6c87a6 70% 100%),repeating-linear-gradient(90deg,#0002 0 8px,#0000 8px 16px)}
+  .T-nyprod{background:linear-gradient(#98cfe7 0 25%, #cfe9f5 25% 75%, #98cfe7 75% 100%),repeating-linear-gradient(90deg,#0002 0 8px,#0000 8px 16px)}
+  .T-gamlastan{background:linear-gradient(#e68449 0 25%, #ffda8a 25% 75%, #e68449 75% 100%),repeating-linear-gradient(90deg,#0002 0 8px,#0000 8px 16px)}
+  .C-ny{filter:none} .C-sliten{filter:contrast(.9) saturate(.85) brightness(.95)} .C-forfallen{filter:grayscale(.25) contrast(.85) brightness(.9)}
+  /* Modaler */
+  .modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:50}
+  .box{background:#0f1727;border:3px solid #000;border-radius:14px;padding:16px;min-width:360px;max-width:960px}
+  .offers{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .offer{background:#0f1524;border:2px solid #000;border-radius:12px;padding:10px;display:grid;grid-template-columns:88px 1fr auto;gap:8px;align-items:center}
+  .small{width:88px;height:88px;border:3px solid #000;border-radius:6px;image-rendering:pixelated}
+  /* Eventkort */
+  .event{display:grid;grid-template-columns:96px 1fr;gap:12px}
+  .ev-pixel{width:96px;height:96px;border:3px solid #000;border-radius:6px;image-rendering:pixelated}
+  .ev-water{background:repeating-linear-gradient(0deg,#4da6ff 0 6px,#89c2ff 6px 12px)}
+  .ev-union{background:repeating-linear-gradient(45deg,#ff7861 0 8px,#ffc0b6 8px 16px)}
+  .ev-press{background:repeating-linear-gradient(45deg,#ffe36e 0 8px,#fff4b2 8px 16px)}
+  .ev-market{background:repeating-linear-gradient(45deg,#9adf9a 0 8px,#c8f3c8 8px 16px)}
+  .ev-policy{background:repeating-linear-gradient(45deg,#b69cff 0 8px,#d7caff 8px 16px)}
+  .economy{display:flex;flex-direction:column;gap:8px}
+  .economy .rowb{background:#0f1524;border:2px solid #000;border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center}
+  /* Startskärm */
+  .splash{position:fixed;inset:0;background:#0a1440;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100}
+  .splash .title{font-size:32px;font-weight:900;letter-spacing:.3px;text-align:center}
+  .splash .sub{font-size:14px;color:#a6b0c3;text-align:center}
+  .splash img{width:220px;height:220px;image-rendering:pixelated;border:3px solid #000;border-radius:12px;background:#111}
+  .splash .start{background:#ffd34d;border:3px solid #000;border-radius:12px;padding:12px 18px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.6)}
+/* === Pinball Highscore Board === */
+.pinboard{
+  position:relative;
+  background:
+    radial-gradient(120% 120% at 20% 10%, #2a2a62 0%, #151538 45%, #0a0a1c 100%),
+    linear-gradient(#0e0f17,#0e0f17);
+  color:#fff;
+  border-radius:22px;
+  padding:18px;
+  border:6px solid #0a0a0f;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.06),
+    0 12px 24px rgba(0,0,0,.6),
+    0 0 24px 4px rgba(0,180,255,.25);
+  min-width:640px;
+  max-width:820px;
+}
+.hs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hs-title{
+  font-weight:900; letter-spacing:2px; font-size:22px;
+  text-shadow:
+    0 0 6px rgba(0,255,255,.7),
+    0 0 18px rgba(0,255,180,.35),
+    2px 2px 0 #000;
+}
+.hs-sub{color:#a6b0c3; font-size:12px; margin-bottom:10px}
+.hs-board{
+  display:grid; gap:6px; margin-top:6px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08));
+  border:2px solid #000; border-radius:14px; padding:10px;
+  box-shadow: inset 0 8px 24px rgba(0,0,0,.45);
+}
+.hs-row{
+  display:grid; grid-template-columns:56px 1fr 200px 140px; gap:8px;
+  align-items:center; background:rgba(255,255,255,.06);
+  border:2px solid #000; border-radius:12px; padding:8px 10px;
+}
+.hs-row:nth-child(odd){ background:rgba(255,255,255,.03) }
+.hs-rank{
+  font-weight:900; font-size:18px; justify-self:center;
+  text-shadow: 0 0 6px rgba(255,200,0,.5), 1px 1px 0 #000;
+}
+.hs-name{ font-weight:700; letter-spacing:.3px }
+.hs-score{
+  font-variant-numeric: tabular-nums; font-weight:900; text-align:right;
+  text-shadow: 0 0 8px rgba(0,255,140,.4), 1px 1px 0 #000;
+}
+.hs-date{ color:#a6b0c3; font-size:12px; text-align:right }
+
+.hs-row.top1 { border-color:#ffd34d; box-shadow: 0 0 16px rgba(255,211,77,.35) inset }
+.hs-row.top2 { border-color:#bcd7ff }
+.hs-row.top3 { border-color:#ffb084 }
+
+.hs-medal{ font-size:20px }
+.hs-badge{
+  border:2px solid #000; border-radius:999px; padding:6px 10px;
+  background:linear-gradient(180deg, #ffe36e, #ffb84d); color:#000; font-weight:900;
+  box-shadow: 0 6px 0 rgba(0,0,0,.6), 0 0 12px rgba(255,200,0,.3);
+}
+.glow{ animation:glow-pulse 1.6s ease-in-out infinite }
+@keyframes glow-pulse{
+  0%,100%{ filter:drop-shadow(0 0 0 rgba(255,220,0,.0)) }
+  50%{ filter:drop-shadow(0 0 8px rgba(255,220,0,.7)) }
+}
+.hs-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:10px }
+.hs-led{
+  width:12px; height:12px; border-radius:50%; border:2px solid #000; background:#2aff7a;
+  box-shadow: 0 0 10px rgba(42,255,122,.8), 0 0 24px rgba(42,255,122,.4);
+  animation: led-blink 1.2s infinite;
+}
+@keyframes led-blink{
+  0%,60%{ opacity:1 } 70%{ opacity:.3 } 100%{ opacity:1 }
+}
+
+/* Smalare skärmar */
+@media (max-width:720px){
+  .pinboard{ min-width:auto; width:calc(100vw - 36px); padding:14px }
+  .hs-row{ grid-template-columns:40px 1fr 140px 90px }
+  .hs-score{ font-size:14px }
+}
+.property-card {
+  display: grid;
+  gap: 10px;
+}
+
+.prop-header {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.prop-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.prop-value {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.prop-status, .prop-econ {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.prop-bars {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.prop-anekdot {
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* ====== Knappstatus – variabler (tweak’a fritt) ====== */
+:root{
+  --good:      #16a34a; /* grön text när ok + du har råd */
+  --cant:      #ffffff; /* vit text när saknar kassa */
+  --disabled:  #9ca3af; /* grå text när spärrad/inte tillåten */
+  --btn-bg:    #1f2937; /* standardknappens bakgrund (mörk) */
+  --btn-bg-alt:#334155; /* alt-knapp (om du har .btn.alt) */
+  --btn-border:#475569;
+  --btn-shadow: rgba(0,0,0,.2);
+}
+
+/* ====== Bas-knapp (om du redan har .btn – komplettera gärna) ====== */
+.btn{
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--cant);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px var(--btn-shadow);
+  transition: color .15s ease, background-color .15s ease, transform .04s ease, opacity .15s ease, filter .15s ease;
+  cursor: pointer;
+  user-select: none;
+  will-change: color, background-color, transform, opacity, filter;
+}
+.btn.mini{ padding: 6px 10px; font-size: 0.95rem; }
+.btn.alt{ background: var(--btn-bg-alt); }
+
+/* Hover/active – endast om knappen inte är disabled */
+.btn:not(:disabled):hover{ filter: brightness(1.08); }
+.btn:not(:disabled):active{ transform: translateY(1px); }
+
+/* ====== Tillstånd vi sätter via JS ======
+   – JS sätter bara textfärgen (var(--good)/var(--cant)/var(--disabled)).
+   – Här förstärker vi upplevelsen visuellt.                           */
+
+/* 1) Möjlig + du har råd (texten blir grön via JS) */
+.btn.possible-affordable{
+  /* valfritt, lite glow runt grön text */
+  text-shadow: 0 0 6px rgba(22,163,74,.25);
+}
+
+/* 2) Möjlig men saknar kassa (texten blir vit via JS) */
+.btn.possible-no-cash{
+  /* subtil “låst av kassa”-känsla utan att disable:a */
+  filter: saturate(.9);
+}
+
+/* 3) Spärrad (disabled) – oberoende av färg vi sätter i JS */
+.btn:disabled,
+.btn[disabled]{
+  color: var(--disabled) !important;   /* säkerställ grå text */
+  opacity: .55;                         /* tydligt dämpad */
+  cursor: not-allowed;                  /* förbjudet-kursorn */
+  filter: grayscale(.4);
+  /* ev. dämpa skugga så den känns inaktiv */
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+/* Fokus – tillgänglighet (bara när knappen är fokusbar) */
+.btn:focus-visible{
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(96,165,250,.35);
+}
+
+/* ====== Chips (valfritt, för konsekvent look) ====== */
+.chip{ border-radius: 999px; padding: 2px 8px; font-size: .85rem; border: 1px solid var(--btn-border); }
+.status-ok{ color: #16a34a; border-color: rgba(22,163,74,.35); }
+.status-warn{ color: #eab308; border-color: rgba(234,179,8,.35); }
+.status-bad{ color: #ef4444; border-color: rgba(239,68,68,.35); }
+
+/* === Statuschips – bättre synlighet === */
+.card .chips{
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;
+}
+
+.card .chip{
+  --ch-bg: #2a2f39;              /* fallback */
+  --ch-fg: #dbe7ff;
+  --ch-bd: #3a4252;
+  font-size:12px; font-weight:700; letter-spacing:.02em;
+  text-transform:uppercase;
+  padding:6px 10px; line-height:1;
+  border-radius:999px;
+  background: var(--ch-bg);
+  color: var(--ch-fg);
+  border:1px solid var(--ch-bd);
+  box-shadow: 0 1px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.03);
+}
+
+/* OK / Varnande / Dåligt – hög kontrast + subtil lysning */
+.card .chip.status-ok{
+  --ch-bg: rgba(20,184,90,.18);   /* grönt */
+  --ch-fg: #b7ffd2;
+  --ch-bd: rgba(20,184,90,.65);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,.35),
+    0 0 0 3px rgba(20,184,90,.18) inset;
+}
+
+.card .chip.status-warn{
+  --ch-bg: rgba(245,158,11,.20);  /* orange */
+  --ch-fg: #ffe7b3;
+  --ch-bd: rgba(245,158,11,.70);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,.35),
+    0 0 0 3px rgba(245,158,11,.18) inset;
+}
+
+.card .chip.status-bad{
+  --ch-bg: rgba(239,68,68,.22);   /* röd */
+  --ch-fg: #ffd2d2;
+  --ch-bd: rgba(239,68,68,.70);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,.35),
+    0 0 0 3px rgba(239,68,68,.16) inset;
+}
+
+/* Gör även vanliga ”chip”-taggar tydliga (t.ex. Lån/Projekt) */
+.card .chip:not(.status-ok):not(.status-warn):not(.status-bad){
+  --ch-bg:#232833; --ch-fg:#dbe7ff; --ch-bd:#3a4252;
+}
+
+.props-header {
+  display: flex;
+  justify-content: space-between; /* titel till vänster, knapp till höger */
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.props-header h2 {
+  margin: 0;
+}
+
+.props-header #openMarket {
+  margin: 0;
+}
+
+/* placerar "Fastighetsmarknad" bredvid "Mina fastigheter" */
+.props-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+.props-header h3{ margin:0; }
+.props-header #openMarket{ margin:0; }
+
+.splash .btn {
+  margin-top: 8px;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+/* --- Lagerordning (så modaler alltid ligger över splash) --- */
+.splash {
+  position: fixed;        /* täcker skärmen */
+  inset: 0;
+  z-index: 500;           /* under modaler */
+}
+
+.modal {
+  position: fixed;        /* täcker skärmen */
+  inset: 0;
+  z-index: 2000;          /* över splash och övrigt */
+}
+
+/* (om du har en intern panel i modalen, säkra den också) */
+.modal .box,
+#hsModal .pinboard {
+  position: relative;
+  z-index: 1;
+}
+
+.bar {
+  min-height: 12px;   /* ser till att den alltid är synlig */
+  margin: 4px 0;      /* lite luft runt så den inte trycks ihop */
+}
+
+.fill.good { background: #29b36a; }
+.fill.mid  { background: #d1a000; }
+.fill.bad  { background: #d06666; }
+
+/* ==== Skick-bar (extra tydlig) ==== */
+.bar.skick {
+  min-height: 14px;         /* lite högre */
+  border: 2px solid #444;   /* ram för att markera tydligare */
+}
+
+.bar.skick .fill.good { background: #2ecc71; }   /* starkare grön */
+.bar.skick .fill.mid  { background: #f1c40f; }   /* starkare gul */
+.bar.skick .fill.bad  { background: #e74c3c; }   /* starkare röd */
