@@ -236,18 +236,15 @@ export function openHSModal() {
   const m = document.getElementById('hsModal');
   if (m) m.style.display = 'block';
 }
-
 export function closeHSModal() {
   const m = document.getElementById('hsModal');
   if (m) m.style.display = 'none';
 }
-
-// koppla stäng-knappen om den finns
 document.getElementById('hsClose')?.addEventListener('click', closeHSModal);
 // -----------------------------------
 
 Object.assign(window, {
-  openHS: openHSModal,   // <— praktiskt alias för dina knappar
+  openHS: openHSModal,
   openHSModal,
   closeHSModal,
   renderHighscores,
