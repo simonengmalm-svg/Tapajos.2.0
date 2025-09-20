@@ -3,18 +3,6 @@ import { state, currentYear } from './state.js';
 import { showAppHideSplash, updateTop, renderOwned, note } from './ui.js';
 import { ensureMarketForThisYear } from './market.js';
 
-// (valfritt) highscore – laddas lazy; funkar även om modulen saknas
-let saveHighscore, refreshHighscoresSafe;
-import('./highscore.js')
-  .then(hs => {
-    saveHighscore = hs.saveHighscore;
-    refreshHighscoresSafe = hs.refreshHighscoresSafe;
-  })
-  .catch(() => { /* ok om highscore inte finns */ });
-
-// -------------------------------------------------------
-// Starta spelet
-// -------------------------------------------------------
 export function startGame() {
   // Grundinit
   state.player = state.player || {};
@@ -38,94 +26,35 @@ export function startGame() {
   note?.('Välkommen! Ditt äventyr börjar nu.');
 }
 
-// -------------------------------------------------------
-// Nästa period/år
-// -------------------------------------------------------
 export function nextPeriod() {
   state.year = Number(state.year || 1) + 1;
-
-  // Här kan du lägga ekonomi/underhåll mm per år
-
   ensureMarketForThisYear?.();
   updateTop?.();
   renderOwned?.();
-
   if (state.year >= 16) endGame();
 }
 
-// -------------------------------------------------------
-// Avslut / summering
-// -------------------------------------------------------
-function fmt(n) {
-  try { return Number(n || 0).toLocaleString('sv-SE'); }
-  catch { return String(n); }
-}
+function fmt(n) { try { return Number(n||0).toLocaleString('sv-SE'); } catch { return String(n); } }
 
 function summarizeEnd() {
   const owned = state.owned || [];
-  const worth = owned.reduce((sum, b) => {
-    const base = (b.basePrice ?? b.price ?? 0);
-    return sum + Number(base || 0);
-  }, 0);
-
-  const avgSat = owned.length
-    ? Math.round(owned.reduce((s, b) => s + Number(b?.sat ?? 0), 0) / owned.length)
-    : 0;
-
-  return {
-    worth,
-    props: owned.length,
-    avgSat,
-    year: currentYear?.() ?? state.year ?? 1,
-  };
+  const worth = owned.reduce((sum, b) => sum + Number((b.basePrice ?? b.price ?? 0) || 0), 0);
+  const avgSat = owned.length ? Math.round(owned.reduce((s, b) => s + Number(b?.sat ?? 0), 0) / owned.length) : 0;
+  return { worth, props: owned.length, avgSat, year: currentYear?.() ?? state.year ?? 1 };
 }
 
 export function endGame() {
   const s = summarizeEnd();
-
   const sumEl = document.getElementById('endSummary');
   if (sumEl) {
     sumEl.innerHTML =
       `Nettoförmögenhet: <b>${fmt(s.worth)}</b> kr<br>` +
       `Fastigheter: <b>${s.props}</b> • Snittnöjdhet: <b>${s.avgSat}%</b>`;
   }
-
-  try {
-    saveHighscore?.();
-    setTimeout(() => refreshHighscoresSafe?.(), 500);
-  } catch (e) {
-    console.error('Kunde inte spara highscore:', e);
-    alert('Hoppsan! Kunde inte spara highscore just nu.');
-  }
-
   const end = document.getElementById('endModal');
   if (end?.style) end.style.display = 'flex';
-
   note?.('Spelet är slut – bra spelat!');
 }
 
-// -------------------------------------------------------
-// (Exempel) Hjälpfunktion
-// -------------------------------------------------------
-function completeBRF(i, b) {
-  const premium = 1.35;
-  const valuation = (x) => (x?.basePrice ?? x?.price ?? 0);
-  const cashIn = Math.round(valuation(b) * premium);
-
-  state.cash = (state.cash || 0) + cashIn;
-  const idx = (state.owned || []).indexOf(b);
-  if (idx >= 0) state.owned.splice(idx, 1);
-
-  note?.('Ombildning klar. Likvid insatt.');
-  updateTop?.();
-  renderOwned?.();
-}
-
-// -------------------------------------------------------
-// Exponera globalt (för HTML/andra moduler/console)
-// -------------------------------------------------------
-Object.assign(window, {
-  startGame,
-  nextPeriod,
-  updateTop, // smidigt att kunna kalla från konsolen
-});
+// Exponera globalt
+Object.assign(window, { startGame, nextPeriod });
