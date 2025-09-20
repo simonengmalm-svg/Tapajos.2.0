@@ -13,7 +13,7 @@ import * as ui         from './ui.js';
 import * as hs         from './highscore.js';
 import * as game       from './game.js';
 
-// 2) Hjälpare för att plocka funktioner oavsett om de exporteras eller läggs på window
+// 2) Hjälpare för att plocka funktioner oavsett export-sätt
 const pickFn = (...candidates) => candidates.find(fn => typeof fn === 'function');
 
 // Plocka state
@@ -32,8 +32,8 @@ const renderHSBoard       = pickFn(hs?.renderHSBoard,       window.renderHSBoard
 const openHSModal         = pickFn(hs?.openHSModal,         window.openHSModal);
 const closeHSModal        = pickFn(hs?.closeHSModal,        window.closeHSModal);
 
-// 3) Init när DOM är redo
-window.addEventListener('DOMContentLoaded', async () => {
+// 3) Kör init direkt (IIFE) – eftersom <script> ligger sist i <body>
+(async () => {
   // Sätt versionstagg om element finns
   try {
     const ver = (config?.GAME_VERSION) ?? (window.GAME_VERSION) ?? (state.version) ?? '1.x';
@@ -67,9 +67,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       state.player = { name, company };
 
       if (remember?.checked) {
-        try {
-          localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company }));
-        } catch {}
+        try { localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company })); } catch {}
       }
 
       showAppHideSplash?.();
@@ -106,12 +104,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     hsClose.dataset.bound = '1';
   }
 
-  // Fallback-rendering om någon går direkt till appen
+  // Fallback-render om någon går direkt till appen
   updateTop?.();
   renderOwned?.();
   renderHighscores?.();
   renderHSBoard?.();
-});
+
+  console.info('[Tapajos] Main.js init klart');
+})();
 
 // 4) Liten debughjälp i konsolen
 try {
@@ -120,5 +120,4 @@ try {
     config,
     ui, hs, game, market, loans, social, economy, eventsMod
   };
-  console.info('[Tapajos] Main.js init klart');
 } catch {}
