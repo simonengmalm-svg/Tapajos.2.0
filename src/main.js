@@ -1,4 +1,4 @@
-// ./src/Main.js
+// ./src/main.js
 
 // 1) Ladda alla sidomoduler så deras side-effects (t.ex. window-funktioner, state mm) finns.
 import * as config     from './config.js';
