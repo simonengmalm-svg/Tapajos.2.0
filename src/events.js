@@ -75,7 +75,4 @@ Object.assign(window, {
   openEvent,
   closeEvent,
   rollEvent,
-  ...(market.openNegotiation ? { openNegotiation: market.openNegotiation } : {}),
-  ...(market.updateNegProb ? { updateNegProb: market.updateNegProb } : {}),
-  ...(market.runNegotiation ? { runNegotiation: market.runNegotiation } : {}),
 });
