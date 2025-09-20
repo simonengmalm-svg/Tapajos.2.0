@@ -1,3 +1,4 @@
+import * as market from './market.js';
 import { state, pick, randInt } from './state.js';
 import { TYPES } from './state.js';
 import { effectiveRent, effectiveMaint } from './economy.js';
@@ -74,7 +75,7 @@ Object.assign(window, {
   openEvent,
   closeEvent,
   rollEvent,
-  openNegotiation,
-  updateNegProb,
-  runNegotiation,
+  ...(market.openNegotiation ? { openNegotiation: market.openNegotiation } : {}),
+  ...(market.updateNegProb ? { updateNegProb: market.updateNegProb } : {}),
+  ...(market.runNegotiation ? { runNegotiation: market.runNegotiation } : {}),
 });
