@@ -8,7 +8,7 @@ import * as economy    from './economy.js';
 import * as social     from './social.js';
 import * as loans      from './loans.js';
 import * as eventsMod  from './events.js';
-import * as market     from './Market.js';
+import * as market     from './market.js';
 import * as ui         from './ui.js';
 import * as hs         from './highscore.js';
 import * as game       from './game.js';
