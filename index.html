@@ -4,162 +4,55 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
-
-  <!-- Din vanliga CSS om du har en -->
-  <link rel="stylesheet" href="style.css"/>
-
-  <style>
-    /* Säkra, snygga defaults så inget “bottenband” syns */
-    html, body { margin:0; height:100%; background:#0b1a44; color:#fff; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    .splash { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:10px; padding:24px 16px; }
-    .title { font-size:clamp(26px, 4vw, 40px); font-weight:800; margin-top:12px; text-align:center; }
-    .sub   { opacity:.9; margin-top:4px; text-align:center; }
-    .Title { opacity:.9; max-width:900px; margin:8px auto 18px; text-align:center; }
-
-    .form { display:grid; gap:10px; width:min(420px, 90%); margin:6px auto 8px; }
-    .form label { display:grid; gap:6px; text-align:left; }
-    .form input[type="text"] {
-      padding:10px; border:2px solid #000; border-radius:10px; background:#0f1524; color:#fff;
-    }
-    .form .row { display:flex; gap:8px; align-items:center; justify-content:flex-start; }
-
-    .btn { cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; }
-    .start { background:#ffd146; color:#000; border:2px solid #000; }
-    .ghost { background:transparent; color:#fff; border:2px solid #fff; }
-    .btnbar { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
-
-    /* App-wrap gömd tills start */
-    #appWrap { display:none; padding:16px; }
-
-    /* Enkel HS-modal (fallback) */
-    .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
-    .pinboard { background:#0f1524; border-radius:12px; padding:16px; width:min(680px, 92%); }
-    .hs-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .btn.close { background:#333; color:#fff; border:0; }
-    .hs-title { font-weight:800; }
-  </style>
+  <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
-
-  <!-- Splash -->
+  <!-- Splash / startvy -->
   <div class="splash" id="splash">
-    <!-- RÄTT SÖKVÄG TILL BILDEN -->
-    <img src="assets/mascot.png" alt="Maskot" width="160" height="160" onerror="this.style.display='none'"/>
-
-    <div class="title">TAPAJOS – Det roliga fastighetsbolaget</div>
-    <div class="sub">Bygg, förvalta och gör vinst på 15 år</div>
-    <div class="Title">
-      Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?
-    </div>
+    <img alt="Maskot" src="./src/assets/mascot.png" class="logo" />
+    <h1>TAPAJOS – Det roliga fastighetsbolaget</h1>
+    <p>Bygg, förvalta och gör vinst på 15 år</p>
+    <p>Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?</p>
 
     <!-- Profilformulär -->
-    <div class="form">
+    <div class="profile-form">
       <label>
-        <span>Namn</span>
-        <input id="startName" type="text" placeholder="Ditt namn" autocomplete="name"/>
+        Namn<br />
+        <input id="startName" placeholder="Ditt namn" autocomplete="name" />
       </label>
+      <br />
       <label>
-        <span>Företag</span>
-        <input id="startCompany" type="text" placeholder="Företag (valfritt)" autocomplete="organization"/>
+        Företag<br />
+        <input id="startCompany" placeholder="Företag (valfritt)" autocomplete="organization" />
       </label>
-      <div class="row">
-        <input id="rememberProfile" type="checkbox" checked />
-        <span>Kom ihåg mig på den här enheten</span>
-      </div>
-    </div>
-
-    <!-- Knappar -->
-    <div class="btnbar">
-      <button class="btn start" id="startBtn" type="button" onclick="__forceStart()">Starta spelet</button>
-      <button class="btn ghost" id="openHS" type="button" onclick="__openHS()">Highscore 🏆</button>
+      <br />
+      <label>
+        <input type="checkbox" id="rememberProfile" checked />
+        Kom ihåg mig på den här enheten
+      </label>
+      <br />
+      <button class="btn start" id="startBtn" type="button" onclick="window.startGame()">Starta spelet</button>
+      <button class="btn" id="openHS" type="button">Highscore 🏆</button>
     </div>
   </div>
 
-  <!-- Själva appen -->
-  <div id="appWrap" class="wrap">
-    <div class="topbar">
-      <div class="badge">💰 Kassa: <span id="cash">10 000 000</span> kr</div>
-      <div class="badge">💳 Skuld: <span id="debtTop">0</span> kr</div>
-      <div class="badge">📅 År: <span id="yearNow">1</span> / 15</div>
-      <div class="badge">📈 Marknad: <span id="market">1.00×</span></div>
-      <div class="badge">🏦 Ränta: <span id="rate">3.0</span>%</div>
-      <button id="next" class="btn ghost" onclick="window.nextPeriod?.()">Nästa år ▶</button>
-      <button class="btn ghost" id="openHSStart" type="button" onclick="__openHS()">Highscore 🏆</button>
-    </div>
+  <!-- Själva spelet -->
+  <div id="appWrap" style="display:none;">
+    <header>
+      <span>Kassa: <span id="cash">0</span> kr</span> |
+      <span>Skuld: <span id="debtTop">0</span> kr</span> |
+      <span>År: <span id="yearNow">-</span></span> |
+      <span>Marknad: <span id="market">1.00×</span></span> |
+      <span>Ränta: <span id="rate">0</span>%</span>
+    </header>
 
-    <div class="main">
-      <div class="panel">
-        <div class="props-header" style="display:flex;justify-content:space-between;align-items:center;">
-          <h3>Mina fastigheter</h3>
-          <button id="openMarket" class="btn ghost" onclick="window.openMarket?.()">Fastighetsmarknad</button>
-        </div>
-        <div id="props"></div>
-      </div>
-
-      <div class="panel">
-        <h3>Ekonomi</h3>
-        <div class="economy">
-          <div class="rowb"><b>Periodens resultat</b> <span id="pnl">0 kr</span></div>
-          <div class="rowb"><b>Intäkter (hyra)</b> <span id="rent">0 kr</span></div>
-          <div class="rowb"><b>Kostnader (drift/underhåll)</b> <span id="maint">0 kr</span></div>
-          <div class="rowb"><b>Räntekostnad</b> <span id="interest">0 kr</span></div>
-          <div class="rowb"><b>Amortering</b> <span id="amort">0 kr</span></div>
-          <div class="rowb"><b>Skuld</b> <span id="debt">0 kr</span></div>
-          <div class="rowb"><b>Notiser</b> <div id="notes" class="meta">—</div></div>
-        </div>
-      </div>
-    </div>
+    <main>
+      <section id="props"></section>
+      <section id="notes">—</section>
+    </main>
   </div>
 
-  <!-- Highscore-modal (fallback finns) -->
-  <div id="hsModal" class="modal" style="display:none;">
-    <div class="pinboard">
-      <div class="hs-header">
-        <div class="hs-title">🏆 TAPAJOS HIGHSCORE</div>
-        <button id="hsClose" class="btn close" onclick="__closeHS()">Stäng</button>
-      </div>
-      <div class="hs-sub">Top 10 ● Nettoförmögenhet</div>
-      <div id="hsBoard" class="hs-board">Laddar…</div>
-      <div class="hs-footer"><span class="hs-led"></span></div>
-    </div>
-  </div>
-
-  <!-- Fallback-script: gör knapparna fungerande oavsett -->
-  <script>
-    // Alltid fungerande start (döljer splash, visar app)
-    function __forceStart() {
-      const splash = document.getElementById('splash');
-      const app    = document.getElementById('appWrap');
-      if (splash) splash.style.display = 'none';
-      if (app)    app.style.display    = 'block';
-
-      // Försök köra din riktiga startlogik om den finns
-      try {
-        if (typeof window.startGame === 'function') {
-          setTimeout(() => window.startGame(), 0);
-        } else if (typeof window.showAppHideSplash === 'function') {
-          setTimeout(() => window.showAppHideSplash(), 0);
-        }
-      } catch (e) {
-        console.warn('Fallback-start körd. Orsak:', e);
-      }
-    }
-
-    // Alltid fungerande HS (fallback visar bara modalen)
-    function __openHS() {
-      try {
-        if (typeof window.openHS === 'function') return window.openHS();
-      } catch {}
-      const m = document.getElementById('hsModal');
-      if (m) m.style.display = 'flex';
-    }
-    function __closeHS() {
-      const m = document.getElementById('hsModal');
-      if (m) m.style.display = 'none';
-    }
-  </script>
-
-  <!-- Ladda din app som ES-modul (måste peka rätt!) -->
+  <!-- Ladda spelet -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
