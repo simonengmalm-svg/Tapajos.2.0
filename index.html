@@ -37,9 +37,10 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="start" id="startBtn" type="button">
-        Starta spelet
-      </button>
+      <button class="start" id="startBtn" type="button"
+        onclick="(window.startGame || window.showAppHideSplash)?.()">
+  Starta spelet
+</button>
       <button class="btn ghost" id="openHS" type="button">
         Highscore 🏆
       </button>
