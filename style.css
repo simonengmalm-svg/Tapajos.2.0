@@ -379,3 +379,7 @@
 /* se till att splash-lagret och knappen är klickbara */
 .splash { position: relative; z-index: 1000; }
 #startBtn { position: relative; z-index: 1001; pointer-events: auto; }
+
+
+.splash { position: relative; z-index: 1000; }
+#startBtn, #openHS, #openHSStart { position: relative; z-index: 1001; pointer-events: auto; }
