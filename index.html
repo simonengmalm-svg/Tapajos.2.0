@@ -113,6 +113,23 @@
   <div id="endModal" class="modal">…</div>
   <div id="eventModal" class="modal">…</div>
 
+<script>
+  // Extra-säkerhet: starta vid klick på #startBtn, i capturing-läge
+  document.addEventListener('click', function (e) {
+    const btn = e.target && e.target.closest && e.target.closest('#startBtn');
+    if (!btn) return;
+    e.preventDefault();
+    if (window.startGame) {
+      window.startGame();
+    } else {
+      const s = document.getElementById('splash');
+      const a = document.getElementById('appWrap');
+      if (s) s.style.display = 'none';
+      if (a) a.style.display = 'block';
+    }
+  }, true);
+</script>
+
   <!-- Ladda Main som ES-modul -->
   <script type="module" src="./src/main.js"></script>
 </body>
