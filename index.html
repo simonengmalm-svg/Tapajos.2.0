@@ -44,7 +44,10 @@
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
       <!-- Viktigt: kör riktiga startGame direkt -->
-     <button class="start" id="startBtn" type="button">Starta spelet</button>
+     <button class="start" id="startBtn" type="button"
+        onclick="window.startGame && window.startGame()">
+  Starta spelet
+</button>
       <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
     </div>
   </div>
@@ -114,34 +117,6 @@
   <div id="eventModal" class="modal">…</div>
 
 
-<script>
-  // Säkert klick-wire för startknappen – även om moduler strular
-  (function () {
-    function wire() {
-      var btn = document.getElementById('startBtn');
-      if (!btn || btn.dataset.wired) return;
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (typeof window.startGame === 'function') {
-          window.startGame();
-        } else {
-          // Fallback: visa appen ändå så du kommer in
-          var s = document.getElementById('splash');
-          var a = document.getElementById('appWrap');
-          if (s) s.style.display = 'none';
-          if (a) a.style.display = 'block';
-          console.warn('[fallback] startGame saknas – visade appen ändå');
-        }
-      }, true); // capturing = fångar även om något ligger ovanpå
-      btn.dataset.wired = '1';
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire, { once: true });
-    } else {
-      wire();
-    }
-  })();
-</script>
 
 
   <!-- Ladda Main som ES-modul -->
