@@ -109,6 +109,40 @@ export function renderOwned(){
   });
 }
 
+// Minimal, säker implementation – gör inget farligt om element saknas
+export function bindCoreButtonsOnce() {
+  // Starta spelet från startsidan (om ett formulär/knapp finns)
+  const startForm = document.getElementById('startForm');
+  const startBtn  = document.getElementById('btnStart');
+
+  const startHandler = (e) => {
+    e?.preventDefault?.();
+    // Göm splash / visa app (din funktion finns redan globalt eller i main)
+    if (typeof window.showAppHideSplash === 'function') window.showAppHideSplash();
+    // Om du har annan init-logik kan den läggas här
+  };
+
+  if (startForm && !startForm.dataset.wired) {
+    startForm.addEventListener('submit', startHandler);
+    startForm.dataset.wired = '1';
+  }
+  if (startBtn && !startBtn.dataset.wired) {
+    startBtn.addEventListener('click', startHandler);
+    startBtn.dataset.wired = '1';
+  }
+
+  // Market-knapp (om du har en knapp som öppnar marknad)
+  const marketBtn = document.getElementById('btnMarket');
+  if (marketBtn && !marketBtn.dataset.wired) {
+    marketBtn.addEventListener('click', () => {
+      if (typeof window.openMarket === 'function') window.openMarket();
+    });
+    marketBtn.dataset.wired = '1';
+  }
+
+  // Lägg ev fler kärn-knappar här på samma sätt
+}
+
 Object.assign(window, {
   bindCoreButtonsOnce,
   showAppHideSplash,
