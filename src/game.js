@@ -3,14 +3,14 @@ import { state, currentYear } from './state.js';
 import { showAppHideSplash, updateTop, renderOwned, note } from './ui.js';
 import { ensureMarketForThisYear } from './market.js';
 
-// (valfritt) highscore-funktioner laddas lazy och används bara om de finns
+// (valfritt) highscore – laddas lazy; funkar även om modulen saknas
 let saveHighscore, refreshHighscoresSafe;
 import('./highscore.js')
   .then(hs => {
     saveHighscore = hs.saveHighscore;
     refreshHighscoresSafe = hs.refreshHighscoresSafe;
   })
-  .catch(() => { /* ingen highscore-modul, det är ok */ });
+  .catch(() => { /* ok om highscore inte finns */ });
 
 // -------------------------------------------------------
 // Starta spelet
@@ -21,15 +21,17 @@ export function startGame() {
   state.notes  = state.notes  || [];
   state.owned  = state.owned  || [];
 
-  // Rimliga defaults om något saknas
+  // Defaults första gången
   if (state.cash   == null) state.cash   = 10_000_000;
   if (state.debt   == null) state.debt   = 0;
   if (state.rate   == null) state.rate   = 3.0;
   if (state.market == null) state.market = 1.00;
   if (state.year   == null) state.year   = 1;
 
-  // Visa appen, initiera marknad och rendera
+  // Visa appen och göm splash
   showAppHideSplash?.();
+
+  // Initiera marknaden & rendera UI
   ensureMarketForThisYear?.();
   updateTop?.();
   renderOwned?.();
@@ -37,13 +39,12 @@ export function startGame() {
 }
 
 // -------------------------------------------------------
-// Nästa period/år (mycket enkel loop)
+// Nästa period/år
 // -------------------------------------------------------
 export function nextPeriod() {
   state.year = Number(state.year || 1) + 1;
 
-  // Här kan du lägga ekonomi/underhåll/logik per år om du vill
-  // t.ex. state.cash += income - costs;
+  // Här kan du lägga ekonomi/underhåll mm per år
 
   ensureMarketForThisYear?.();
   updateTop?.();
@@ -104,7 +105,7 @@ export function endGame() {
 }
 
 // -------------------------------------------------------
-// (Exempel) Hjälp-funktion om du vill trigga en affär
+// (Exempel) Hjälpfunktion
 // -------------------------------------------------------
 function completeBRF(i, b) {
   const premium = 1.35;
@@ -121,10 +122,10 @@ function completeBRF(i, b) {
 }
 
 // -------------------------------------------------------
-// Exponera för HTML/andra moduler
+// Exponera globalt (för HTML/andra moduler/console)
 // -------------------------------------------------------
 Object.assign(window, {
   startGame,
   nextPeriod,
-  updateTop, // praktiskt om du vill trigga från konsolen
+  updateTop, // smidigt att kunna kalla från konsolen
 });
