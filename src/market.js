@@ -52,6 +52,19 @@ export function acceptOffer(off, withLoan=false){
   return { ok:true };
 }
 
+// --- lägg till i market.js ---
+export function openMarket() {
+  ensureMarketForThisYear();
+  const m = document.getElementById('marketModal');
+  if (m) m.style.display = 'flex';
+}
+
+export function closeMarket() {
+  const m = document.getElementById('marketModal');
+  if (m) m.style.display = 'none';
+}
+// --- slut på tillägg ---
+
 Object.assign(window, {
   openMarket,
   closeMarket,
