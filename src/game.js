@@ -58,3 +58,11 @@ export function endGame() {
 
 // Exponera globalt
 Object.assign(window, { startGame, nextPeriod });
+
+
+export function startGame() {
+  // ... din nuvarande init (showAppHideSplash(), ensureMarketForThisYear(), updateTop(), renderOwned() osv.)
+}
+
+Object.assign(window, { startGame });
+window.startGame = startGame; // extra säkerhet för vissa bundlers
