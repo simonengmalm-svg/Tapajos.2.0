@@ -383,3 +383,16 @@
 
 .splash { position: relative; z-index: 1000; }
 #startBtn, #openHS, #openHSStart { position: relative; z-index: 1001; pointer-events: auto; }
+
+/* 1) Enhetlig bakgrund & ingen extra kant */
+html, body { margin: 0; background: #0f1e4a; } /* välj din navy */
+.wrap, .splash { background: transparent; }
+
+/* 2) Döda ev. botten-overlay/gradient/efter-element */
+body::before, body::after { content: none !important; display: none !important; }
+
+/* 3) Se till att splash fyller höjden snyggt */
+.splash { min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+/* 4) För säkerhets skull – inget “sticky” som råkar bli en bar */
+footer, .footer, .bottom, .page-bottom { display: none !important; }
