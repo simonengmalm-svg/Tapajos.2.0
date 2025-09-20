@@ -231,12 +231,27 @@ export async function saveHighscore(){
   }
 }
 
+// ---- Lägg till i highscore.js ----
+export function openHSModal() {
+  const m = document.getElementById('hsModal');
+  if (m) m.style.display = 'block';
+}
+
+export function closeHSModal() {
+  const m = document.getElementById('hsModal');
+  if (m) m.style.display = 'none';
+}
+
+// koppla stäng-knappen om den finns
+document.getElementById('hsClose')?.addEventListener('click', closeHSModal);
+// -----------------------------------
+
 Object.assign(window, {
+  openHS: openHSModal,   // <— praktiskt alias för dina knappar
   openHSModal,
   closeHSModal,
   renderHighscores,
   renderHSBoard,
-  renderHSStats,         // om den finns
-  saveHighscore,         // om du har manuell sparknapp
-  refreshHighscoresSafe, // valfritt
+  saveHighscore,
+  refreshHighscoresSafe,
 });
