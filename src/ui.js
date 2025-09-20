@@ -147,6 +147,6 @@ Object.assign(window, {
   bindCoreButtonsOnce,
   showAppHideSplash,
   renderOwned,
-  updateTop,        // om den ligger i ui.js hos dig
-  note,             // om andra vill anropa denna
+  updateTop,
+  note,
 });
