@@ -375,3 +375,7 @@
 .bar.skick .fill.good { background: #2ecc71; }   /* starkare grön */
 .bar.skick .fill.mid  { background: #f1c40f; }   /* starkare gul */
 .bar.skick .fill.bad  { background: #e74c3c; }   /* starkare röd */
+
+/* se till att splash-lagret och knappen är klickbara */
+.splash { position: relative; z-index: 1000; }
+#startBtn { position: relative; z-index: 1001; pointer-events: auto; }
