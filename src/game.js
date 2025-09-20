@@ -59,5 +59,5 @@ export function endGame() {
   note?.('Spelet är slut – bra spelat!');
 }
 
-// Exponera globalt (räcker med en rad)
+// Exponera globalt – EN rad räcker
 Object.assign(window, { startGame, nextPeriod, endGame });
