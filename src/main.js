@@ -1,6 +1,6 @@
 // ./src/main.js
 
-// 1) Ladda alla sidomoduler så deras side-effects (t.ex. window-funktioner, state mm) finns.
+// 1) Ladda alla moduler så deras funktioner & state finns tillgängligt
 import * as config     from './config.js';
 import * as stateMod   from './state.js';
 import './anekdoter.js';
@@ -13,7 +13,7 @@ import * as ui         from './ui.js';
 import * as hs         from './highscore.js';
 import * as game       from './game.js';
 
-// 2) Hjälpare för att hämta funktioner oavsett export-sätt (named export eller window.*)
+// 2) Hjälpare för att plocka funktioner oavsett om de exporteras eller läggs på window
 const pickFn = (...candidates) => candidates.find(fn => typeof fn === 'function');
 
 // Plocka state
@@ -34,14 +34,14 @@ const closeHSModal        = pickFn(hs?.closeHSModal,        window.closeHSModal)
 
 // 3) Init när DOM är redo
 window.addEventListener('DOMContentLoaded', async () => {
-  // Versionstagg om du har ett element för det
+  // Sätt versionstagg om element finns
   try {
     const ver = (config?.GAME_VERSION) ?? (window.GAME_VERSION) ?? (state.version) ?? '1.x';
     const verTag = document.getElementById('hsVersionTag');
     if (verTag) verTag.textContent = 'Version ' + ver;
   } catch {}
 
-  // Läs highscore-tavla direkt (tål nätfel)
+  // Läs highscore direkt (tål nätfel)
   try {
     if (hsReadFromSheet) await hsReadFromSheet();
     if (renderHighscores) renderHighscores();
@@ -50,10 +50,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.warn('[HS] init-läsning misslyckades', e);
   }
 
-  // Binda alla core-knappar (övriga knappar bindas inne i ui.js)
-  if (bindCoreButtonsOnce) bindCoreButtonsOnce();
+  // Koppla knappar (övriga binds i ui.js)
+  bindCoreButtonsOnce?.();
 
-  // Start-knappen: läs profil, spara (om kryssad), göm splash & rendera UI
+  // Start-knappen
   const startBtn = document.getElementById('startBtn');
   if (startBtn && !startBtn.dataset.bound) {
     startBtn.addEventListener('click', () => {
@@ -67,25 +67,26 @@ window.addEventListener('DOMContentLoaded', async () => {
       state.player = { name, company };
 
       if (remember?.checked) {
-        try { localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company })); } catch {}
+        try {
+          localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company }));
+        } catch {}
       }
 
-      if (showAppHideSplash) showAppHideSplash();
-      if (updateTop)   updateTop();
-      if (renderOwned) renderOwned();
-      // Valfritt: rendera HS i end-modal listan direkt
-      if (renderHighscores) renderHighscores();
-      if (renderHSBoard)    renderHSBoard();
+      showAppHideSplash?.();
+      updateTop?.();
+      renderOwned?.();
+      renderHighscores?.();
+      renderHSBoard?.();
     });
     startBtn.dataset.bound = '1';
   }
 
-  // Highscore-knappar på splash/topbar
+  // Highscore-knappar (splash + topbar)
   const hsBtn1 = document.getElementById('openHS');
   if (hsBtn1 && !hsBtn1.dataset.bound) {
     hsBtn1.addEventListener('click', async () => {
       try { if (hsReadFromSheet) await hsReadFromSheet(); } catch {}
-      if (openHSModal) openHSModal();
+      openHSModal?.();
     });
     hsBtn1.dataset.bound = '1';
   }
@@ -94,22 +95,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (hsBtn2 && !hsBtn2.dataset.bound) {
     hsBtn2.addEventListener('click', async () => {
       try { if (hsReadFromSheet) await hsReadFromSheet(); } catch {}
-      if (openHSModal) openHSModal();
+      openHSModal?.();
     });
     hsBtn2.dataset.bound = '1';
   }
 
   const hsClose = document.getElementById('hsClose');
   if (hsClose && !hsClose.dataset.bound) {
-    hsClose.addEventListener('click', () => { if (closeHSModal) closeHSModal(); });
+    hsClose.addEventListener('click', () => closeHSModal?.());
     hsClose.dataset.bound = '1';
   }
 
-  // Fallback: om någon går direkt till spelet
-  if (updateTop)   updateTop();
-  if (renderOwned) renderOwned();
-  if (renderHighscores) renderHighscores();
-  if (renderHSBoard)    renderHSBoard();
+  // Fallback-rendering om någon går direkt till appen
+  updateTop?.();
+  renderOwned?.();
+  renderHighscores?.();
+  renderHSBoard?.();
 });
 
 // 4) Liten debughjälp i konsolen
