@@ -1,21 +1,18 @@
 // src/ui.js
 import { state, TYPES, currentYear } from './state.js';
 
-// små hjälpare
-const $  = (id) => document.getElementById(id);
-const qc = (sel) => document.querySelector(sel);
+const $  = (id)  => document.getElementById(id);
 
-// -----------------------------
 // Visa appen / göm splash
-// -----------------------------
 export function showAppHideSplash() {
   const name = $('#startName')?.value?.trim();
   if (name) {
     state.player = state.player || {};
     state.player.name = name;
   }
+
   const splash = $('#splash');
-  const app    = $('#appWrap');     // <- matchar din HTML
+  const app    = $('#appWrap');
   if (splash) splash.style.display = 'none';
   if (app)    app.style.display    = 'block';
 
@@ -23,11 +20,9 @@ export function showAppHideSplash() {
   renderOwned();
 }
 
-// -----------------------------
-// Rendera ägda fastigheter
-// -----------------------------
+// Rendera fastigheter
 export function renderOwned() {
-  const wrap = $('#props');         // <- matchar din HTML
+  const wrap = $('#props');
   if (!wrap) return;
   wrap.innerHTML = '';
 
@@ -40,7 +35,7 @@ export function renderOwned() {
   }
 
   owned.forEach((b) => {
-    const card = document.createElement('div');
+    const card  = document.createElement('div');
     card.className = 'prop-card';
 
     const tinfo = TYPES?.[b.tid];
@@ -48,7 +43,7 @@ export function renderOwned() {
     title.className = 'prop-title';
     title.textContent = `${tinfo?.name ?? 'Fastighet'} — ${b.units ?? '?'} lgh`;
 
-    const meta = document.createElement('div');
+    const meta  = document.createElement('div');
     meta.className = 'prop-meta';
     const price = (b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE') + ' kr';
     const cond  = (typeof b.cond === 'number') ? `${b.cond}/10` : (b.cond ?? '-');
@@ -60,26 +55,23 @@ export function renderOwned() {
   });
 }
 
-// -----------------------------
-// Uppdatera toppbar
-// -----------------------------
+// Topbar
 export function updateTop() {
-  $('#cash')?.replaceChildren(document.createTextNode((state.cash ?? 0).toLocaleString('sv-SE')));
-  $('#debtTop')?.replaceChildren(document.createTextNode((state.debt ?? 0).toLocaleString('sv-SE')));
-  $('#yearNow')?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
-  $('#market')?.replaceChildren(document.createTextNode((state.market ?? 1).toFixed?.(2) + '×'));
-  $('#rate')?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
+  $('#cash')    ?.replaceChildren(document.createTextNode((state.cash   ?? 0).toLocaleString('sv-SE')));
+  $('#debtTop') ?.replaceChildren(document.createTextNode((state.debt   ?? 0).toLocaleString('sv-SE')));
+  $('#yearNow') ?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
+  $('#market')  ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
+  $('#rate')    ?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
 }
 
-// -----------------------------
 // Notiser
-// -----------------------------
 export function note(msg) {
   state.notes = state.notes || [];
   if (msg) state.notes.push({ t: Date.now(), msg });
 
   const list = $('#notes');
   if (!list) return;
+
   list.innerHTML = state.notes.length
     ? state.notes.slice(-50).map(n => {
         const d = new Date(n.t).toLocaleTimeString('sv-SE');
@@ -88,29 +80,28 @@ export function note(msg) {
     : '—';
 }
 
-// -----------------------------
-// Knyt knappar EN gång
-// -----------------------------
+// Knyt knappar
 export function bindCoreButtonsOnce() {
-  const startBtn   = $('#startBtn');     // <- matchar din HTML
-  const hsBtn      = $('#openHS');
-  const hsBtnTop   = $('#openHSStart');
-  const nextBtn    = $('#next');
-  const marketBtn  = $('#openMarket');   // <- matchar din HTML
+  const startBtn  = $('#startBtn');
+  const hsBtn     = $('#openHS');
+  const hsBtnTop  = $('#openHSStart');
+  const nextBtn   = $('#next');
+  const marketBtn = $('#openMarket');
 
   if (startBtn && !startBtn.dataset.wired) {
-    startBtn.addEventListener('click', (e) => { e.preventDefault(); showAppHideSplash(); });
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof window.startGame === 'function') window.startGame();
+      else showAppHideSplash();
+    });
     startBtn.dataset.wired = '1';
   }
 
   if (marketBtn && !marketBtn.dataset.wired) {
-    marketBtn.addEventListener('click', () => {
-      if (typeof window.openMarket === 'function') window.openMarket();
-    });
+    marketBtn.addEventListener('click', () => window.openMarket?.());
     marketBtn.dataset.wired = '1';
   }
 
-  // (valfritt) koppla highscore/next om du har globala handlers
   if (hsBtn && !hsBtn.dataset.wired) {
     hsBtn.addEventListener('click', () => window.openHS?.());
     hsBtn.dataset.wired = '1';
@@ -120,14 +111,11 @@ export function bindCoreButtonsOnce() {
     hsBtnTop.dataset.wired = '1';
   }
   if (nextBtn && !nextBtn.dataset.wired) {
-    nextBtn.addEventListener('click', () => window.tickYear?.());
+    nextBtn.addEventListener('click', () => window.nextPeriod?.());
     nextBtn.dataset.wired = '1';
   }
 }
 
-// -----------------------------
-// (valfritt) exponera globalt
-// -----------------------------
 Object.assign(window, {
   bindCoreButtonsOnce,
   showAppHideSplash,
