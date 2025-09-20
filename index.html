@@ -1,58 +1,119 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
-  <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* Säkerställ helsidig splash och klickbara knappar */
+    html, body { margin:0; background:#0b1a44; color:#fff; }
+    .splash { min-height:100vh; position:relative; z-index:1000; }
+    #startBtn, #openHS, #openHSStart { position:relative; z-index:1001; pointer-events:auto; }
+  </style>
 </head>
 <body>
-  <!-- Splash / startvy -->
+
+  <!-- Splash / start -->
   <div class="splash" id="splash">
-    <img alt="Maskot" src="./src/assets/mascot.png" class="logo" />
-    <h1>TAPAJOS – Det roliga fastighetsbolaget</h1>
-    <p>Bygg, förvalta och gör vinst på 15 år</p>
-    <p>Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?</p>
+    <img alt="Maskot" onerror="this.style.display='none'" src="assets/mascot.png" style="display:block;margin:24px auto;max-width:180px"/>
+    <div class="title">TAPAJOS – Det roliga fastighetsbolaget</div>
+    <div class="sub">Bygg, förvalta och gör vinst på 15 år</div>
+    <div class="Title">
+      Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?
+    </div>
 
     <!-- Profilformulär -->
-    <div class="profile-form">
-      <label>
-        Namn<br />
-        <input id="startName" placeholder="Ditt namn" autocomplete="name" />
+    <div style="display:grid;gap:10px;max-width:420px;margin:14px auto 8px;">
+      <label style="display:grid;gap:6px;">
+        <span>Namn</span>
+        <input id="startName" placeholder="Ditt namn" autocomplete="name"
+               style="padding:10px;border:2px solid #000;border-radius:10px;background:#0f1524;color:#fff"/>
       </label>
-      <br />
-      <label>
-        Företag<br />
-        <input id="startCompany" placeholder="Företag (valfritt)" autocomplete="organization" />
+      <label style="display:grid;gap:6px;">
+        <span>Företag</span>
+        <input id="startCompany" placeholder="Företag (valfritt)" autocomplete="organization"
+               style="padding:10px;border:2px solid #000;border-radius:10px;background:#0f1524;color:#fff"/>
       </label>
-      <br />
-      <label>
-        <input type="checkbox" id="rememberProfile" checked />
-        Kom ihåg mig på den här enheten
+      <label style="display:flex;gap:8px;align-items:center;justify-content:flex-start;">
+        <input id="rememberProfile" type="checkbox" checked />
+        <span>Kom ihåg mig på den här enheten</span>
       </label>
-      <br />
-      <button class="btn start" id="startBtn" type="button" onclick="window.startGame()">Starta spelet</button>
-      <button class="btn" id="openHS" type="button">Highscore 🏆</button>
+    </div>
+
+    <!-- Knappar -->
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+      <!-- Viktigt: kör riktiga startGame direkt -->
+      <button class="start" id="startBtn" type="button" onclick="window.startGame()">Starta spelet</button>
+      <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
     </div>
   </div>
 
-  <!-- Själva spelet -->
-  <div id="appWrap" style="display:none;">
-    <header>
-      <span>Kassa: <span id="cash">0</span> kr</span> |
-      <span>Skuld: <span id="debtTop">0</span> kr</span> |
-      <span>År: <span id="yearNow">-</span></span> |
-      <span>Marknad: <span id="market">1.00×</span></span> |
-      <span>Ränta: <span id="rate">0</span>%</span>
-    </header>
+  <!-- Själva appen -->
+  <div id="appWrap" class="wrap" style="display:none">
+    <div class="topbar">
+      <div class="brand">
+        <img id="brandImg" src="assets/mascot.png" alt="Maskot" onerror="this.style.display='none'"/>
+        <div>
+          <div class="brand-title">TAPAJOS – Det roliga fastighetsbolaget</div>
+          <div class="brand-sub">Bygg, förvalta och gör vinst på 15 år</div>
+        </div>
+      </div>
 
-    <main>
-      <section id="props"></section>
-      <section id="notes">—</section>
-    </main>
+      <div class="badge">💰 Kassa: <span id="cash">10 000 000</span> kr</div>
+      <div class="badge">💳 Skuld: <span id="debtTop">0</span> kr</div>
+      <div class="badge">📅 År: <span id="yearNow">1</span> / 15</div>
+      <div class="badge">📈 Marknad: <span id="market">1.00×</span></div>
+      <div class="badge">🏦 Ränta: <span id="rate">3.0</span>%</div>
+
+      <button id="next" class="btn alt">Nästa år ▶</button>
+      <button class="btn ghost" id="openHSStart" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
+    </div>
+
+    <div class="main">
+      <div class="panel">
+        <div class="props-header">
+          <h3>Mina fastigheter</h3>
+          <button id="openMarket" class="btn">Fastighetsmarknad</button>
+        </div>
+        <div id="props" class="props"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Ekonomi</h3>
+        <div class="economy">
+          <div class="rowb"><b>Periodens resultat</b><span id="pnl">0 kr</span></div>
+          <div class="rowb"><b>Intäkter (hyra)</b><span id="rent">0 kr</span></div>
+          <div class="rowb"><b>Kostnader (drift/underhåll)</b><span id="maint">0 kr</span></div>
+          <div class="rowb"><b>Räntekostnad</b><span id="interest">0 kr</span></div>
+          <div class="rowb"><b>Amortering</b><span id="amort">0 kr</span></div>
+          <div class="rowb"><b>Skuld</b><span id="debt">0 kr</span></div>
+          <div class="rowb"><b>Notiser</b><div id="notes" class="meta">—</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Ladda spelet -->
+  <!-- Highscore-modal -->
+  <div id="hsModal" class="modal" style="display:none">
+    <div class="pinboard">
+      <div class="hs-header">
+        <div class="hs-title">🏆 TAPAJOS HIGHSCORE</div>
+        <button id="hsClose" class="btn close" onclick="window.closeHSModal?.()">Stäng</button>
+      </div>
+      <div class="hs-sub">Top 10 ● Nettoförmögenhet</div>
+      <div id="hsBoard" class="hs-board"></div>
+      <div class="hs-footer"><span class="hs-led"></span></div>
+    </div>
+  </div>
+
+  <!-- Modaler (innehåll renderas av JS) -->
+  <div id="marketModal" class="modal">…</div>
+  <div id="negModal" class="modal">…</div>
+  <div id="endModal" class="modal">…</div>
+  <div id="eventModal" class="modal">…</div>
+
+  <!-- Ladda Main som ES-modul -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
