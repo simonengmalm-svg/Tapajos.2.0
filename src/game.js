@@ -138,6 +138,34 @@ function completeBRF(i, b) {
   renderOwned();
 }
 
+// ---- lägg detta ovanför Object.assign(window, {...}) ----
+
+// Initiera spelet
+export function startGame() {
+  // säkerställ att state finns
+  state.player = state.player || {};
+  state.notes  = state.notes  || [];
+  state.owned  = state.owned  || [];
+
+  if (state.cash == null) state.cash = 10_000_000;
+  if (state.debt == null) state.debt = 0;
+  if (state.year == null) state.year = 1;
+
+  // visa appen, göm splash
+  if (typeof window.showAppHideSplash === 'function') {
+    window.showAppHideSplash();
+  }
+
+  // ladda marknaden
+  if (typeof window.ensureMarketForThisYear === 'function') {
+    window.ensureMarketForThisYear();
+  }
+
+  // första render
+  if (typeof window.updateTop === 'function') window.updateTop();
+  if (typeof window.renderOwned === 'function') window.renderOwned();
+}
+
 /* -------------------------------------------------------
    Globala hooks (för äldre anrop/HTML-knappar)
 ------------------------------------------------------- */
