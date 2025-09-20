@@ -2,133 +2,105 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <title>TAPAJOS – Det roliga fastighetsbolaget</title>
+  <title>Tapajos — Det roliga fastighetsbolaget</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
-      padding: 0;
-      font-family: system-ui, sans-serif;
-      background: #0a1a4f;
+      font-family: Arial, sans-serif;
+      background: #0b1a44;
       color: white;
       text-align: center;
     }
-
     #splash {
-      display: block;
       padding: 2rem;
     }
-
     #appWrap {
       display: none;
-      padding: 2rem;
+      padding: 1rem;
     }
-
-    .input-group {
-      margin: 1rem auto;
-      max-width: 300px;
-      text-align: left;
-    }
-
-    .input-group label {
-      display: block;
-      margin-bottom: 0.3rem;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 0.5rem;
-      border-radius: 6px;
-      border: none;
-      font-size: 1rem;
-    }
-
-    button.start {
+    .start {
+      margin: 1rem;
+      padding: 0.8rem 1.6rem;
       background: gold;
       border: none;
-      border-radius: 8px;
-      padding: 0.7rem 1.5rem;
-      font-size: 1rem;
+      border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      margin: 1rem;
     }
-
-    button.hs {
-      background: #1a2a6c;
-      border: 2px solid white;
-      border-radius: 8px;
-      padding: 0.7rem 1.5rem;
-      font-size: 1rem;
-      font-weight: bold;
+    .hs {
+      margin: 1rem;
+      padding: 0.8rem 1.6rem;
+      background: #223;
       color: white;
+      border: 2px solid gold;
+      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
-      margin: 1rem;
     }
-
-    img.logo {
-      max-width: 200px;
-      margin: 1rem auto;
+    input, label {
       display: block;
+      margin: 0.5rem auto;
+      padding: 0.4rem;
+      border-radius: 6px;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <div id="splash" class="splash">
-    <img src="./src/assets/mascot.png" alt="Logo" class="logo">
 
-    <h1>TAPAJOS – Det roliga fastighetsbolaget</h1>
+  <div id="splash">
+    <img src="assets/mascot.png" alt="Tapajos Mascot" width="128" height="128">
+    <h1>TAPAJOS — Det roliga fastighetsbolaget</h1>
     <p>Bygg, förvalta och gör vinst på 15 år</p>
     <p>Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?</p>
 
-    <div class="input-group">
-      <label for="startName">Namn</label>
-      <input id="startName" type="text" placeholder="Ditt namn">
-    </div>
+    <label for="startName">Namn</label>
+    <input type="text" id="startName" placeholder="Ditt namn">
 
-    <div class="input-group">
-      <label for="startCompany">Företag</label>
-      <input id="startCompany" type="text" placeholder="Företag">
-    </div>
+    <label for="startCompany">Företag</label>
+    <input type="text" id="startCompany" placeholder="Ditt företag">
 
-    <div class="input-group">
-      <label>
-        <input type="checkbox" id="rememberProfile"> Kom ihåg mig på den här enheten
-      </label>
-    </div>
+    <label><input type="checkbox" id="rememberProfile"> Kom ihåg mig på den här enheten</label>
 
-    <button class="start" id="startBtn" type="button"
-            onclick="(window.startGame || window.showAppHideSplash)?.()">
-      Starta spelet
-    </button>
-
+    <button class="start" id="startBtn" type="button" onclick="__forceStart()">Starta spelet</button>
     <button class="hs" id="openHSStart" type="button">Highscore 🏆</button>
   </div>
 
   <div id="appWrap">
-    <h2>Spelet är igång!</h2>
     <div id="topbar">
-      <span id="cash"></span> kr |
-      Skuld: <span id="debtTop"></span> |
-      År: <span id="yearNow"></span> |
-      Marknad: <span id="market"></span> |
-      Ränta: <span id="rate"></span>
+      <span>Kassa: <span id="cash">0</span></span> |
+      <span>Skuld: <span id="debtTop">0</span></span> |
+      <span>År: <span id="yearNow">-</span></span> |
+      <span>Marknad: <span id="market">1.00×</span></span> |
+      <span>Ränta: <span id="rate">0</span>%</span>
     </div>
+
     <div id="props"></div>
     <div id="notes"></div>
   </div>
 
-  <!-- Fallback som alltid fångar klick på start -->
+  <!-- Fallback som alltid funkar -->
   <script>
-    document.addEventListener('click', function (e) {
-      const btn = e.target && e.target.closest && e.target.closest('#startBtn');
-      if (!btn) return;
-      e.preventDefault();
-      (window.startGame || window.showAppHideSplash)?.();
-    }, true);
+    window.__forceStart = function () {
+      var s = document.getElementById('splash');
+      var a = document.getElementById('appWrap');
+      if (s) s.style.display = 'none';
+      if (a) a.style.display = 'block';
+
+      try {
+        if (typeof window.startGame === 'function') {
+          setTimeout(function(){ window.startGame(); }, 0);
+        } else if (typeof window.showAppHideSplash === 'function') {
+          setTimeout(function(){ window.showAppHideSplash(); }, 0);
+        }
+      } catch (e) {
+        console.warn('Start fallback kördes, ingen full startlogik:', e);
+      }
+    };
   </script>
 
-  <!-- Din main.js -->
+  <!-- Din riktiga JS -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
