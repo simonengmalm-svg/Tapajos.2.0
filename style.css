@@ -396,3 +396,7 @@ body::before, body::after { content: none !important; display: none !important; 
 
 /* 4) För säkerhets skull – inget “sticky” som råkar bli en bar */
 footer, .footer, .bottom, .page-bottom { display: none !important; }
+
+
+.splash { min-height: 100vh; position: relative; z-index: 1000; }
+#startBtn { position: relative; z-index: 1001; pointer-events: auto; }
