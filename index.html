@@ -5,19 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
   <link rel="stylesheet" href="style.css"/>
-  <style>
-    /* Säkerställ att knappar går att klicka */
-    .splash { position: relative; z-index: 1000; }
-    #startBtn, #openHS, #openHSStart {
-      position: relative;
-      z-index: 1001;
-      pointer-events: auto;
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Splash / startskärm -->
+  <!-- Splash (startskärm) -->
   <div class="splash" id="splash">
     <img alt="Maskot" onerror="this.style.display='none'" src="assets/mascot.png"/>
     <div class="title">TAPAJOS – Det roliga fastighetsbolaget</div>
@@ -46,17 +37,16 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="start" id="startBtn" type="button"
-              onclick="(window.startGame || window.showAppHideSplash)?.()">
+      <button class="start" id="startBtn" type="button">
         Starta spelet
       </button>
-      <button class="btn ghost" id="openHS" type="button" onclick="window.openHS?.()">
+      <button class="btn ghost" id="openHS" type="button">
         Highscore 🏆
       </button>
     </div>
   </div>
 
-  <!-- Huvudapp -->
+  <!-- App-wrap (själva spelet) -->
   <div id="appWrap" class="wrap" style="display:none">
     <div class="topbar">
       <div class="brand">
@@ -74,7 +64,7 @@
       <div class="badge">🏦 Ränta: <span id="rate">3.0</span>%</div>
 
       <button id="next" class="btn alt">Nästa år ▶</button>
-      <button class="btn ghost" id="openHSStart" type="button" onclick="window.openHS?.()">Highscore 🏆</button>
+      <button class="btn ghost" id="openHSStart">Highscore 🏆</button>
     </div>
 
     <div class="main">
@@ -120,7 +110,7 @@
     </div>
   </div>
 
-  <!-- Main som ES-modul -->
+  <!-- Main.js -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
