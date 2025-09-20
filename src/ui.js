@@ -1,9 +1,11 @@
 // src/ui.js
 import { state, TYPES, currentYear } from './state.js';
 
-const $  = (id)  => document.getElementById(id);
+const $  = (id) => document.getElementById(id);
 
+// -----------------------------
 // Visa appen / göm splash
+// -----------------------------
 export function showAppHideSplash() {
   const name = $('#startName')?.value?.trim();
   if (name) {
@@ -20,7 +22,9 @@ export function showAppHideSplash() {
   renderOwned();
 }
 
+// -----------------------------
 // Rendera fastigheter
+// -----------------------------
 export function renderOwned() {
   const wrap = $('#props');
   if (!wrap) return;
@@ -55,16 +59,20 @@ export function renderOwned() {
   });
 }
 
+// -----------------------------
 // Topbar
+// -----------------------------
 export function updateTop() {
-  $('#cash')    ?.replaceChildren(document.createTextNode((state.cash   ?? 0).toLocaleString('sv-SE')));
-  $('#debtTop') ?.replaceChildren(document.createTextNode((state.debt   ?? 0).toLocaleString('sv-SE')));
-  $('#yearNow') ?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
-  $('#market')  ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
-  $('#rate')    ?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
+  $('#cash')   ?.replaceChildren(document.createTextNode((state.cash ?? 0).toLocaleString('sv-SE')));
+  $('#debtTop')?.replaceChildren(document.createTextNode((state.debt ?? 0).toLocaleString('sv-SE')));
+  $('#yearNow')?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
+  $('#market') ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
+  $('#rate')   ?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
 }
 
+// -----------------------------
 // Notiser
+// -----------------------------
 export function note(msg) {
   state.notes = state.notes || [];
   if (msg) state.notes.push({ t: Date.now(), msg });
@@ -80,42 +88,67 @@ export function note(msg) {
     : '—';
 }
 
-// Knyt knappar
+// -----------------------------
+// Knyt knappar (robust)
+// -----------------------------
 export function bindCoreButtonsOnce() {
   const startBtn  = $('#startBtn');
-  const hsBtn     = $('#openHS');
-  const hsBtnTop  = $('#openHSStart');
-  const nextBtn   = $('#next');
   const marketBtn = $('#openMarket');
+  const hsBtn1    = $('#openHS');
+  const hsBtn2    = $('#openHSStart');
+  const nextBtn   = $('#next');
 
+  // START
+  console.log('[UI] binding startBtn…', !!startBtn);
   if (startBtn && !startBtn.dataset.wired) {
+    startBtn.type = 'button';
     startBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      console.log('[UI] startBtn clicked');
       if (typeof window.startGame === 'function') window.startGame();
       else showAppHideSplash();
     });
     startBtn.dataset.wired = '1';
   }
 
+  // MARKNAD
   if (marketBtn && !marketBtn.dataset.wired) {
+    marketBtn.type = 'button';
     marketBtn.addEventListener('click', () => window.openMarket?.());
     marketBtn.dataset.wired = '1';
   }
 
-  if (hsBtn && !hsBtn.dataset.wired) {
-    hsBtn.addEventListener('click', () => window.openHS?.());
-    hsBtn.dataset.wired = '1';
-  }
-  if (hsBtnTop && !hsBtnTop.dataset.wired) {
-    hsBtnTop.addEventListener('click', () => window.openHS?.());
-    hsBtnTop.dataset.wired = '1';
-  }
+  // HIGHSCORE
+  const wireHS = (btn) => {
+    if (!btn || btn.dataset.wired) return;
+    btn.type = 'button';
+    btn.addEventListener('click', () => window.openHS?.());
+    btn.dataset.wired = '1';
+  };
+  wireHS(hsBtn1);
+  wireHS(hsBtn2);
+
+  // NEXT YEAR
   if (nextBtn && !nextBtn.dataset.wired) {
+    nextBtn.type = 'button';
     nextBtn.addEventListener('click', () => window.nextPeriod?.());
     nextBtn.dataset.wired = '1';
   }
+
+  // Fallback: event delegation (om något missas)
+  if (!document.body.dataset.tapajosDelegation) {
+    document.addEventListener('click', (e) => {
+      const start = e.target?.closest?.('#startBtn');
+      if (start) {
+        e.preventDefault();
+        (window.startGame || showAppHideSplash)?.();
+      }
+    });
+    document.body.dataset.tapajosDelegation = '1';
+  }
 }
 
+// (valfritt) exponera globalt
 Object.assign(window, {
   bindCoreButtonsOnce,
   showAppHideSplash,
