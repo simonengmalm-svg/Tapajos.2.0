@@ -3,72 +3,50 @@ import { state, currentYear } from './state.js';
 import { showAppHideSplash, updateTop, renderOwned, note } from './ui.js';
 import { ensureMarketForThisYear } from './market.js';
 
-// (valfritt) om du har sparfunktioner i highscore.js, annars ignoreras de
 let saveHighscore, refreshHighscoresSafe;
 try {
   const hs = await import('./highscore.js');
   saveHighscore = hs.saveHighscore;
   refreshHighscoresSafe = hs.refreshHighscoresSafe;
-} catch {
-  // highscore-modul saknas eller exporteras ej – inga problem, vi kör ändå
-}
+} catch { /* highscore valfri */ }
 
-/* -------------------------------------------------------
-   Init / Start
-------------------------------------------------------- */
+// Starta spelet
 export function startGame() {
-  // Grundsäker init av state
   state.player = state.player || {};
   state.notes  = state.notes  || [];
   state.owned  = state.owned  || [];
 
-  // rimliga defaults om de saknas
-  if (state.cash == null) state.cash = 10_000_000;
-  if (state.debt == null) state.debt = 0;
-  if (state.rate == null) state.rate = 3.0;
+  if (state.cash   == null) state.cash   = 10_000_000;
+  if (state.debt   == null) state.debt   = 0;
+  if (state.rate   == null) state.rate   = 3.0;
   if (state.market == null) state.market = 1.00;
-  if (state.year  == null) state.year = 1;
+  if (state.year   == null) state.year   = 1;
 
-  // Visa app, göm splash
   showAppHideSplash();
-
-  // Se till att marknaden för året finns
   ensureMarketForThisYear();
-
-  // Första render
   updateTop();
   renderOwned();
-
   note?.('Välkommen! Ditt äventyr börjar nu.');
 }
 
-/* -------------------------------------------------------
-   Spel-loop (enkel): Nästa period/år
-------------------------------------------------------- */
+// Nästa år/period
 export function nextPeriod() {
-  // öka år och uppdatera ev. marknad
   state.year = Number(state.year || 1) + 1;
 
-  // (Här kan du lägga ekonomi/underhåll/hyresintäkter mm om du vill)
-  // t.ex. state.cash += someIncome - someCosts;
+  // (här kan du lägga ekonomi/underhåll)
 
   ensureMarketForThisYear();
   updateTop();
   renderOwned();
 
-  // enkel sluttrigg: avsluta efter 15 år
   if (state.year >= 16) endGame();
 }
 
-/* -------------------------------------------------------
-   Avslut / summering
-------------------------------------------------------- */
 function fmt(n) {
   try { return Number(n || 0).toLocaleString('sv-SE'); }
   catch { return String(n); }
 }
 
-// En väldigt enkel summering – byt gärna mot din riktiga beräkning
 function summarizeEnd() {
   const owned = state.owned || [];
   const worth = owned.reduce((sum, b) => {
@@ -77,15 +55,13 @@ function summarizeEnd() {
   }, 0);
 
   const avgSat = owned.length
-    ? Math.round(
-        owned.reduce((s, b) => s + Number(b?.sat ?? 0), 0) / owned.length
-      )
+    ? Math.round(owned.reduce((s, b) => s + Number(b?.sat ?? 0), 0) / owned.length)
     : 0;
 
   return {
-    worth,                // “nettoförmögenhet” (förenklad)
-    props: owned.length,  // antal fastigheter
-    avgSat,               // nöjdhet (0–100)
+    worth,
+    props: owned.length,
+    avgSat,
     year: currentYear?.() ?? state.year ?? 1,
   };
 }
@@ -93,7 +69,6 @@ function summarizeEnd() {
 export function endGame() {
   const s = summarizeEnd();
 
-  // skriv sammanfattning i modalen om den finns
   const sumEl = document.getElementById('endSummary');
   if (sumEl) {
     sumEl.innerHTML =
@@ -101,35 +76,25 @@ export function endGame() {
       `Fastigheter: <b>${s.props}</b> • Snittnöjdhet: <b>${s.avgSat}%</b>`;
   }
 
-  // försök spara highscore om funktionen finns
   try {
     saveHighscore?.();
-    // ge CW för Google Forms/Sheets etc. en chans att hinna klart
     setTimeout(() => refreshHighscoresSafe?.(), 500);
   } catch (e) {
     console.error('Kunde inte spara highscore:', e);
     alert('Hoppsan! Kunde inte spara highscore just nu.');
   }
 
-  // visa slutmodal
-  const end = document.getElementById('endModal');
-  if (end) end.style.display = 'flex';
-
+  document.getElementById('endModal')?.style && (document.getElementById('endModal').style.display = 'flex');
   note?.('Spelet är slut – bra spelat!');
 }
 
-/* -------------------------------------------------------
-   Hjälp: ev. BRF-ombildning etc. (stubbar – valfritt)
-------------------------------------------------------- */
-// Exempel på en enkel åtgärd du kan anropa från event
+// (exempel) hjälpfunktion
 function completeBRF(i, b) {
-  // Den här är en “stub” – byt mot din riktiga logik vid behov
   const premium = 1.35;
   const valuation = (x) => (x?.basePrice ?? x?.price ?? 0);
   const cashIn = Math.round(valuation(b) * premium);
 
-  state.cash += cashIn;
-  // ta bort “b” ur owned om det ska säljas vid ombildning
+  state.cash = (state.cash || 0) + cashIn;
   const idx = (state.owned || []).indexOf(b);
   if (idx >= 0) state.owned.splice(idx, 1);
 
@@ -138,37 +103,7 @@ function completeBRF(i, b) {
   renderOwned();
 }
 
-// ---- lägg detta ovanför Object.assign(window, {...}) ----
-
-// Initiera spelet
-export function startGame() {
-  // säkerställ att state finns
-  state.player = state.player || {};
-  state.notes  = state.notes  || [];
-  state.owned  = state.owned  || [];
-
-  if (state.cash == null) state.cash = 10_000_000;
-  if (state.debt == null) state.debt = 0;
-  if (state.year == null) state.year = 1;
-
-  // visa appen, göm splash
-  if (typeof window.showAppHideSplash === 'function') {
-    window.showAppHideSplash();
-  }
-
-  // ladda marknaden
-  if (typeof window.ensureMarketForThisYear === 'function') {
-    window.ensureMarketForThisYear();
-  }
-
-  // första render
-  if (typeof window.updateTop === 'function') window.updateTop();
-  if (typeof window.renderOwned === 'function') window.renderOwned();
-}
-
-/* -------------------------------------------------------
-   Globala hooks (för äldre anrop/HTML-knappar)
-------------------------------------------------------- */
+// Globala hooks (för knappar)
 Object.assign(window, {
   startGame,
   nextPeriod,
