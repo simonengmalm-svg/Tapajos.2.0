@@ -36,16 +36,15 @@
     </div>
 
     <!-- Knappar -->
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="start" id="startBtn" type="button"
-        onclick="(window.startGame || window.showAppHideSplash)?.()">
-  Starta spelet
-</button>
-      <button class="btn ghost" id="openHS" type="button">
-        Highscore 🏆
-      </button>
-    </div>
-  </div>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+  <button class="start" id="startBtn" type="button"
+          onclick="(window.startGame || window.showAppHideSplash)?.()">
+    Starta spelet
+  </button>
+  <button class="btn ghost" id="openHS" type="button" onclick="window.openHS?.()">
+    Highscore 🏆
+  </button>
+</div>
 
   <!-- App-wrap (själva spelet) -->
   <div id="appWrap" class="wrap" style="display:none">
