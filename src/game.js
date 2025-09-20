@@ -34,11 +34,14 @@ export function nextPeriod() {
   if (state.year >= 16) endGame();
 }
 
-function fmt(n) { try { return Number(n||0).toLocaleString('sv-SE'); } catch { return String(n); } }
+function fmt(n) {
+  try { return Number(n || 0).toLocaleString('sv-SE'); }
+  catch { return String(n); }
+}
 
 function summarizeEnd() {
-  const owned = state.owned || [];
-  const worth = owned.reduce((sum, b) => sum + Number((b.basePrice ?? b.price ?? 0) || 0), 0);
+  const owned  = state.owned || [];
+  const worth  = owned.reduce((sum, b) => sum + Number((b.basePrice ?? b.price ?? 0) || 0), 0);
   const avgSat = owned.length ? Math.round(owned.reduce((s, b) => s + Number(b?.sat ?? 0), 0) / owned.length) : 0;
   return { worth, props: owned.length, avgSat, year: currentYear?.() ?? state.year ?? 1 };
 }
@@ -56,13 +59,5 @@ export function endGame() {
   note?.('Spelet är slut – bra spelat!');
 }
 
-// Exponera globalt
-Object.assign(window, { startGame, nextPeriod });
-
-
-export function startGame() {
-  // ... din nuvarande init (showAppHideSplash(), ensureMarketForThisYear(), updateTop(), renderOwned() osv.)
-}
-
-Object.assign(window, { startGame });
-window.startGame = startGame; // extra säkerhet för vissa bundlers
+// Exponera globalt (räcker med en rad)
+Object.assign(window, { startGame, nextPeriod, endGame });
