@@ -1,4 +1,4 @@
-// src/ui.js
+// ./src/ui.js
 import { state, TYPES, currentYear } from './state.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,115 +17,85 @@ export function showAppHideSplash() {
     try { localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company })); } catch {}
   }
 
-  const splash = $('#splash');
-  const app    = $('#appWrap');
+  const splash = $('#splash'); const app = $('#appWrap');
   if (splash) splash.style.display = 'none';
   if (app)    app.style.display    = 'block';
 
-  updateTop();
-  renderOwned();
+  updateTop(); renderOwned();
 }
 
-// Rendera fastigheter
+// Render “mina fastigheter”
 export function renderOwned() {
-  const wrap = $('#props');
-  if (!wrap) return;
+  const wrap = $('#props'); if (!wrap) return;
   wrap.innerHTML = '';
-
   const owned = state.owned || [];
   if (!owned.length) {
-    const p = document.createElement('p');
-    p.textContent = 'Du äger inga fastigheter ännu.';
-    wrap.appendChild(p);
-    return;
+    const p = document.createElement('p'); p.textContent = 'Du äger inga fastigheter ännu.';
+    wrap.appendChild(p); return;
   }
-
-  for (const b of owned) {
-    const card  = document.createElement('div');
+  owned.forEach(b => {
+    const card = document.createElement('div');
     card.className = 'prop-card';
-
     const tinfo = TYPES?.[b.tid];
-    const title = document.createElement('div');
-    title.className = 'prop-title';
-    title.textContent = `${tinfo?.name ?? 'Fastighet'} — ${b.units ?? '?'} lgh`;
-
-    const meta  = document.createElement('div');
-    meta.className = 'prop-meta';
-    const price = (b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE') + ' kr';
-    const cond  = (typeof b.cond === 'number') ? `${b.cond}/10` : (b.cond ?? '-');
-    meta.textContent = `Skick: ${cond} • Pris: ${price} • Central: ${b.central ? 'Ja' : 'Nej'}`;
-
-    card.appendChild(title);
-    card.appendChild(meta);
+    card.innerHTML = `
+      <div class="prop-title">${tinfo?.name ?? 'Fastighet'} — ${b.units ?? '?'} lgh</div>
+      <div class="prop-meta">Skick: ${typeof b.cond==='number'? `${b.cond}/10` : (b.cond??'-')}
+        • Pris: ${(b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE')} kr
+        • Central: ${b.central ? 'Ja':'Nej'}</div>`;
     wrap.appendChild(card);
-  }
+  });
 }
 
-// Topbar
+// Toppbaren
 export function updateTop() {
-  $('#cash')    ?.replaceChildren(document.createTextNode((state.cash   ?? 0).toLocaleString('sv-SE')));
-  $('#debtTop') ?.replaceChildren(document.createTextNode((state.debt   ?? 0).toLocaleString('sv-SE')));
-  $('#yearNow') ?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
-  $('#market')  ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
-  $('#rate')    ?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
+  $('#cash')   ?.replaceChildren(document.createTextNode((state.cash   ?? 0).toLocaleString('sv-SE')));
+  $('#debtTop')?.replaceChildren(document.createTextNode((state.debt   ?? 0).toLocaleString('sv-SE')));
+  $('#yearNow')?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.year ?? '-')));
+  $('#market') ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
+  $('#rate')   ?.replaceChildren(document.createTextNode(String(state.rate ?? 0)));
 }
 
 // Notiser
-export function note(msg) {
+export function note(msg){
   state.notes = state.notes || [];
   if (msg) state.notes.push({ t: Date.now(), msg });
-
-  const list = $('#notes');
-  if (!list) return;
-
+  const list = $('#notes'); if (!list) return;
   list.innerHTML = state.notes.length
-    ? state.notes.slice(-50).map(n => {
-        const d = new Date(n.t).toLocaleTimeString('sv-SE');
-        return `<div class="note">[${d}] ${n.msg}</div>`;
+    ? state.notes.slice(-50).map(n=>{
+        const d=new Date(n.t).toLocaleTimeString('sv-SE');
+        return `<div class="note">[${d}] ${n.msg}</div>`
       }).join('')
     : '—';
 }
 
-// Knyt knappar
+// Knyt kärnknappar (Start binds redan inline – vi drar inte i den)
 export function bindCoreButtonsOnce() {
-  const startBtn  = $('#startBtn');
-  const hsBtn     = $('#openHS');
-  const hsBtnTop  = $('#openHSStart');
   const nextBtn   = $('#next');
   const marketBtn = $('#openMarket');
+  const hsBtn1    = $('#openHS');
+  const hsBtn2    = $('#openHSStart');
+  const hsClose   = $('#hsClose');
 
-  if (startBtn && !startBtn.dataset.wired) {
-    startBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof window.startGame === 'function') window.startGame();
-      else showAppHideSplash();
-    });
-    startBtn.dataset.wired = '1';
+  if (nextBtn && !nextBtn.dataset.wired) {
+    nextBtn.addEventListener('click', ()=> window.nextPeriod?.());
+    nextBtn.dataset.wired = '1';
   }
-
   if (marketBtn && !marketBtn.dataset.wired) {
-    marketBtn.addEventListener('click', () => window.openMarket?.());
+    marketBtn.addEventListener('click', ()=> window.openMarket?.());
     marketBtn.dataset.wired = '1';
   }
-
-  if (hsBtn && !hsBtn.dataset.wired) {
-    hsBtn.addEventListener('click', () => window.openHSModal?.());
-    hsBtn.dataset.wired = '1';
+  if (hsBtn1 && !hsBtn1.dataset.wired) {
+    hsBtn1.addEventListener('click', ()=> window.openHSModal?.());
+    hsBtn1.dataset.wired = '1';
   }
-  if (hsBtnTop && !hsBtnTop.dataset.wired) {
-    hsBtnTop.addEventListener('click', () => window.openHSModal?.());
-    hsBtnTop.dataset.wired = '1';
+  if (hsBtn2 && !hsBtn2.dataset.wired) {
+    hsBtn2.addEventListener('click', ()=> window.openHSModal?.());
+    hsBtn2.dataset.wired = '1';
   }
-  if (nextBtn && !nextBtn.dataset.wired) {
-    nextBtn.addEventListener('click', () => window.nextPeriod?.());
-    nextBtn.dataset.wired = '1';
+  if (hsClose && !hsClose.dataset.wired) {
+    hsClose.addEventListener('click', ()=> window.closeHSModal?.());
+    hsClose.dataset.wired = '1';
   }
 }
 
-Object.assign(window, {
-  bindCoreButtonsOnce,
-  showAppHideSplash,
-  renderOwned,
-  updateTop,
-  note,
-});
+Object.assign(window, { bindCoreButtonsOnce, showAppHideSplash, renderOwned, updateTop, note });
