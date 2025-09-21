@@ -1,9 +1,10 @@
-// ./src/game.js
+// src/game.js
 import { state, currentYear } from './state.js';
 import { showAppHideSplash, updateTop, renderOwned, note } from './ui.js';
 import { ensureMarketForThisYear } from './market.js';
 
 export function startGame() {
+  // Grundinit
   state.player = state.player || {};
   state.notes  = state.notes  || [];
   state.owned  = state.owned  || [];
@@ -14,13 +15,13 @@ export function startGame() {
   if (state.market == null) state.market = 1.00;
   if (state.year   == null) state.year   = 1;
 
-  // 🔧 Hård växel: visa appen oavsett UI-helper
+  // 🔒 HÅRD växel till appen (bypassar allt som kan blocka)
   const s = document.getElementById('splash');
   const a = document.getElementById('appWrap');
   if (s) s.style.display = 'none';
   if (a) a.style.display = 'block';
 
-  // (kör mjuka helpers om de finns)
+  // Mjuk logik (kör om de finns)
   showAppHideSplash?.();
   ensureMarketForThisYear?.();
   updateTop?.();
@@ -54,4 +55,5 @@ export function endGame(){
   note?.('Spelet är slut – bra spelat!');
 }
 
+// Exponera globalt
 Object.assign(window, { startGame, nextPeriod, endGame });
