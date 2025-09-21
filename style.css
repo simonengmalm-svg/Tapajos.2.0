@@ -406,3 +406,6 @@ if (marketBtnTop && !marketBtnTop.dataset.wired) {
   marketBtnTop.addEventListener('click', () => window.openMarket?.(), { capture:true });
   marketBtnTop.dataset.wired = '1';
 }
+
+.splash { position:relative; z-index:1000; pointer-events:auto; }
+#startBtn { position:relative; z-index:9999; pointer-events:auto; }
