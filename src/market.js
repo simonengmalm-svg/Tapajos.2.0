@@ -1,13 +1,10 @@
 // src/market.js
 import { state, pick, randInt, uuid, CONDITIONS, TYPES, currentYear } from './state.js';
-import { priceOf }   from './economy.js';
+import { priceOf } from './economy.js';
 import { initSocial } from './social.js';
 import { updateTop, renderOwned, note } from './ui.js';
 
-/* ---------------------------
-   Datamodell & generatorer
-----------------------------*/
-
+// ----- Datadel -----
 export function makeOffer(tid, cond, central){
   const price = priceOf(tid, cond, central);
   const [umin, umax] = TYPES[tid].units;
@@ -15,16 +12,16 @@ export function makeOffer(tid, cond, central){
   return { id: uuid(), tid, cond, central, price, units };
 }
 
-export function generateYearMarket(n = 4){
+export function generateYearMarket(n=4){
   const keys = Object.keys(TYPES);
   const arr = [];
   for (let i = 0; i < n; i++){
-    const tid     = pick(keys);
-    const cond    = pick(CONDITIONS);
+    const tid = pick(keys);
+    const cond = pick(CONDITIONS);
     const central = Math.random() < 0.5;
     arr.push(makeOffer(tid, cond, central));
   }
-  state.marketPool = arr.sort((a,b)=> a.price - b.price);
+  state.marketPool = arr.sort((a,b)=>a.price-b.price);
   state.marketYear = currentYear();
 }
 
@@ -36,162 +33,121 @@ export function removeOfferById(id){
   state.marketPool = (state.marketPool || []).filter(o => o.id !== id);
 }
 
-/* ---------------------------
-   Affärslogik – köp
-----------------------------*/
-
-export function acceptOffer(off, withLoan = false){
-  if (!off) return { ok:false, reason:'Objekt saknas' };
-
-  // Kontantinsats = 30% vid lån
+export function acceptOffer(off, withLoan=false){
+  if (!off) return { ok:false, reason:'Ingen offert' };
   if (withLoan){
     const down = Math.round(off.price * 0.30);
-    if ((state.cash || 0) < down) return { ok:false, reason:'Behöver kontantinsats' };
-
-    state.cash = (state.cash || 0) - down;
-
-    const b = { ...off, loanSeed:true };
+    if ((state.cash ?? 0) < down) return { ok:false, reason:'Behöver kontantinsats' };
+    state.cash = (state.cash ?? 0) - down;
+    const b = { ...off, loanSeed: true };
     initSocial(b);
-    b.basePrice  = off.price;
-    b.baseCond   = off.cond;
-    b.baseMarket = state.market;
-    b.baseUnits  = off.units;
-
+    b.basePrice=off.price; b.baseCond=off.cond; b.baseMarket=state.market; b.baseUnits=off.units;
     state.owned = state.owned || [];
     state.owned.push(b);
   } else {
-    if ((state.cash || 0) < off.price) return { ok:false, reason:'Otillräcklig kassa' };
-
-    state.cash = (state.cash || 0) - off.price;
-
+    if ((state.cash ?? 0) < off.price) return { ok:false, reason:'Otillräcklig kassa' };
+    state.cash = (state.cash ?? 0) - off.price;
     const b = { ...off };
     initSocial(b);
-    b.basePrice  = off.price;
-    b.baseCond   = off.cond;
-    b.baseMarket = state.market;
-    b.baseUnits  = off.units;
-
+    b.basePrice=off.price; b.baseCond=off.cond; b.baseMarket=state.market; b.baseUnits=off.units;
     state.owned = state.owned || [];
     state.owned.push(b);
   }
-
   removeOfferById(off.id);
   return { ok:true };
 }
 
-/* ---------------------------
-   UI – modal & rendering
-----------------------------*/
+// ----- UI-del -----
+const $ = (id) => document.getElementById(id);
+function fmt(n){ try { return Number(n||0).toLocaleString('sv-SE'); } catch { return String(n); } }
 
-function fmtKr(n){ try { return Number(n||0).toLocaleString('sv-SE') + ' kr'; } catch { return String(n) + ' kr'; } }
-function byId(id){ return document.getElementById(id); }
-
-function offerRow(off){
-  const t = TYPES?.[off.tid];
-  const name = t?.name ?? off.tid ?? 'Fastighet';
-  const cond = (typeof off.cond === 'number') ? `${off.cond}/10` : (off.cond ?? '-');
-  const central = off.central ? 'Ja' : 'Nej';
-
-  return `
-    <div class="market-row" data-id="${off.id}" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#0f1b3a">
-      <div>
-        <div style="font-weight:700">${name} — ${off.units} lgh</div>
-        <div style="opacity:.9">Skick: ${cond} • Central: ${central}</div>
-        <div style="margin-top:4px">Pris: <b>${fmtKr(off.price)}</b></div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn buy-cash"  data-id="${off.id}" style="padding:8px 10px;border-radius:8px;border:none;background:#ffd500;color:#111;font-weight:700;cursor:pointer">Köp kontant</button>
-        <button class="btn buy-loan"  data-id="${off.id}" style="padding:8px 10px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;cursor:pointer">Köp med lån</button>
-      </div>
-    </div>`;
-}
-
-function renderMarketList(){
-  const list = byId('marketList');
-  if (!list) return;
+function renderOffers(){
+  ensureMarketForThisYear();
+  const modal = $('#marketModal');
+  if (!modal) return;
 
   const pool = state.marketPool || [];
-  if (!pool.length){
-    list.innerHTML = `<div style="opacity:.85">Inga objekt till salu just nu. Prova nästa år.</div>`;
-    return;
+  const wrap = document.createElement('div');
+  wrap.className = 'box';
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <h3 style="margin:0">Fastighetsmarknad – År ${currentYear?.() ?? state.year ?? 1}</h3>
+      <button class="btn" id="mktClose">Stäng</button>
+    </div>
+    ${pool.length ? `
+      <div class="offers" id="offerList"></div>
+    ` : `
+      <div class="meta">Inga fler erbjudanden i år.</div>
+    `}
+  `;
+
+  modal.innerHTML = ''; // rensa
+  modal.appendChild(wrap);
+
+  const list = wrap.querySelector('#offerList');
+  if (list){
+    pool.forEach(off=>{
+      const tinfo = TYPES?.[off.tid];
+      const card = document.createElement('div');
+      card.className = 'offer';
+      const condLabel = (typeof off.cond === 'number') ? `${off.cond}/10` : String(off.cond ?? '-');
+      const needDown = Math.round(off.price * 0.30);
+
+      const canCash = (state.cash ?? 0) >= off.price;
+      const canLoan = (state.cash ?? 0) >= needDown;
+
+      card.innerHTML = `
+        <div class="small T-${tinfo?.code || off.tid} C-${(off.cond>=8?'ny':off.cond>=5?'sliten':'forfallen')}"></div>
+        <div>
+          <div style="font-weight:800">${tinfo?.name ?? off.tid} • ${off.units} lgh</div>
+          <div class="meta">Skick: ${condLabel} • Central: ${off.central ? 'Ja' : 'Nej'}</div>
+          <div class="meta">Pris: <b>${fmt(off.price)}</b> kr</div>
+        </div>
+        <div style="display:grid;gap:6px">
+          <button class="btn mini" data-act="cash" data-id="${off.id}" ${canCash ? '' : 'disabled title="Otillräcklig kassa"'}>Köp kontant</button>
+          <button class="btn mini" data-act="loan" data-id="${off.id}" ${canLoan ? '' : `disabled title="Behöver ${fmt(needDown)} i kontantinsats"`}>Köp med lån</button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    // klickhanterare på listan
+    list.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const act = btn.getAttribute('data-act');
+      const id  = btn.getAttribute('data-id');
+      const off = (state.marketPool || []).find(o => o.id === id);
+      if (!off) return;
+
+      const res = acceptOffer(off, act === 'loan');
+      if (!res.ok){
+        note?.(res.reason || 'Köp misslyckades.');
+        return;
+      }
+
+      note?.(`Köpt: ${TYPES?.[off.tid]?.name ?? off.tid} (${off.units} lgh) för ${fmt(off.price)} kr` + (act==='loan' ? ' (med lån)' : ''));
+      updateTop?.();
+      renderOwned?.();            // 🔑 rendera korten direkt
+      renderOffers();             // rita om listan (offerten tas bort)
+    }, { once: true }); // one-time listener; renderOffers binder om vid omritning
   }
 
-  list.innerHTML = pool.map(offerRow).join('');
-
-  // wirea knappar
-  list.querySelectorAll('.buy-cash').forEach(btn=>{
-    btn.addEventListener('click', () => buy(btn.dataset.id, false), { capture:true });
-  });
-  list.querySelectorAll('.buy-loan').forEach(btn=>{
-    btn.addEventListener('click', () => buy(btn.dataset.id, true), { capture:true });
-  });
+  // stäng-knapp
+  wrap.querySelector('#mktClose')?.addEventListener('click', closeMarket);
 }
-
-function buy(id, withLoan){
-  const off = (state.marketPool || []).find(o => o.id === id);
-  if (!off) return;
-
-  const res = acceptOffer(off, withLoan);
-  if (!res.ok){
-    alert(res.reason || 'Köp misslyckades');
-    return;
-  }
-
-  note?.(`Köpte ${TYPES?.[off.tid]?.name ?? 'fastighet'} för ${fmtKr(off.price)}${withLoan?' (med lån)':''}.`);
-  updateTop?.();
-  renderOwned?.();
-  renderMarketList();
-}
-
-/* ---------------------------
-   Modal open/close
-----------------------------*/
 
 export function openMarket(){
-  ensureMarketForThisYear();
-
-  let m = byId('marketModal');
-  if (!m){
-    // Om HTML saknar modal (skydd) – skapa enkel modal
-    m = document.createElement('div');
-    m.id = 'marketModal';
-    document.body.appendChild(m);
-  }
-
-  // Injecta enkel markup
-  m.innerHTML = `
-    <div class="market-wrap" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:9999">
-      <div class="market-card" style="width:min(900px,92%);max-height:88vh;overflow:auto;background:#0b1a44;border:2px solid #fff;border-radius:14px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="font-weight:800;font-size:18px">Fastighetsmarknaden – År ${currentYear?.() ?? state.year ?? ''}</div>
-          <button id="marketClose" class="btn close" style="border:none;background:#333;color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer">Stäng</button>
-        </div>
-        <div id="marketList" style="display:grid;gap:10px"></div>
-      </div>
-    </div>`;
-
-  // wire close
-  m.querySelector('#marketClose')?.addEventListener('click', closeMarket, { capture:true });
-  m.addEventListener('click', (e) => {
-    if (e.target.classList?.contains('market-wrap')) closeMarket();
-  }, { capture:true });
-
-  // render lista
-  renderMarketList();
-
-  // visa
-  m.style.display = 'block';
-  // Esc stänger
-  window.addEventListener('keydown', escClose, { once:true, capture:true });
-}
-
-function escClose(e){
-  if (e.key === 'Escape') closeMarket();
+  const modal = $('#marketModal');
+  if (!modal) return;
+  renderOffers();
+  modal.style.display = 'flex';
 }
 
 export function closeMarket(){
-  const m = byId('marketModal');
-  if (m) m.style.display = 'none';
+  const modal = $('#marketModal');
+  if (modal) modal.style.display = 'none';
 }
 
+// Exponera globalt för knappar i HTML
 Object.assign(window, { openMarket, closeMarket });
