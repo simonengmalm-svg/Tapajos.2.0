@@ -1,84 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>TAPAJOS – Det roliga fastighetsbolaget</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    html, body { margin:0; background:#0b1a44; color:#fff; }
-    .splash { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    .title { font-size:1.5em; font-weight:bold; margin-top:1rem; }
-    .sub { margin-bottom:1rem; }
-    button { padding:10px 18px; border-radius:8px; cursor:pointer; }
-
-    /* Fix: låt splash inte blocka klick */
-    #splash { pointer-events:none; }
-    #splash * { pointer-events:auto; }
-
-    #startBtn {
-      background:#ffd500;
-      border:none;
-      font-weight:bold;
-    }
-    #openHS {
-      background:#0b1a44;
-      border:2px solid #fff;
-      color:#fff;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Splash -->
-  <div class="splash" id="splash">
-    <img src="assets/mascot.png" alt="Maskot" style="max-width:180px"/>
-    <div class="title">TAPAJOS – Det roliga fastighetsbolaget</div>
-    <div class="sub">Bygg, förvalta och gör vinst på 15 år</div>
-    <p>Exploiten är stängd. Systemet har anpassats. Version 1.1 är inte längre ett lätt byte – klarar du dig i den nya spelplanen?</p>
-
-    <div style="display:grid;gap:10px;max-width:300px;width:100%;margin-top:1rem;">
-      <label>Namn
-        <input id="startName" placeholder="Ditt namn" style="width:100%"/>
-      </label>
-      <label>Företag
-        <input id="startCompany" placeholder="Företag (valfritt)" style="width:100%"/>
-      </label>
-      <label style="display:flex;gap:6px;align-items:center;">
-        <input id="rememberProfile" type="checkbox" checked/>
-        <span>Kom ihåg mig på den här enheten</span>
-      </label>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:1rem;">
-      <button id="startBtn" type="button"
-        onclick="(window.startGame||function(){
-          document.getElementById('splash').style.display='none';
-          document.getElementById('appWrap').style.display='block';
-          console.warn('[fallback] startGame saknas – visade appen ändå');
-        })()">
-        Starta spelet
-      </button>
-      <button id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
-    </div>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tapajos – DEBUG start</title>
+<body style="margin:0;background:#0b1a44;color:#fff;font-family:system-ui,Segoe UI,Arial">
+  <div id="splash" style="min-height:100vh;display:grid;place-items:center;gap:16px">
+    <h1 style="margin:0">DEBUG: Starta spelet</h1>
+    <button id="startBtn" style="font-size:18px;padding:14px 18px;border-radius:10px;border:none;background:#ffd500;cursor:pointer">
+      Starta spelet
+    </button>
+    <div id="log" style="opacity:.8"></div>
   </div>
 
-  <!-- Själva appen -->
-  <div id="appWrap" style="display:none;padding:1rem;">
-    <div class="topbar">
-      <h2>Spelet körs nu 🎉</h2>
-      <p>Kassa: <span id="cash">10 000 000</span> kr</p>
-      <p>Skuld: <span id="debtTop">0</span> kr</p>
-      <p>År: <span id="yearNow">1</span> / 15</p>
-      <p>Marknad: <span id="market">1.00×</span></p>
-      <p>Ränta: <span id="rate">3.0</span>%</p>
-    </div>
-    <div>
-      <h3>Mina fastigheter</h3>
-      <div id="props"></div>
-    </div>
+  <div id="appWrap" style="display:none;padding:40px">
+    <h2>✅ Du är inne</h2>
+    <p>Knappar fungerar.</p>
   </div>
 
-  <script type="module" src="./src/game.js"></script>
+  <script>
+    // logga vad som tar emot klick
+    document.addEventListener('click', (e) => {
+      const el = e.target;
+      const info = el.tagName + (el.id ? `#${el.id}` : '') + (el.className ? '.' + String(el.className).replace(/\s+/g,'.') : '');
+      const log = document.getElementById('log');
+      log.textContent = 'Klick träffade: ' + info;
+    }, true);
+
+    // enkel bindning (capturing) + fallback
+    (function(){
+      const btn = document.getElementById('startBtn');
+      if(!btn){ alert('startBtn saknas i DOM'); return; }
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('appWrap').style.display = 'block';
+      }, {capture:true});
+    })();
+  </script>
 </body>
 </html>
