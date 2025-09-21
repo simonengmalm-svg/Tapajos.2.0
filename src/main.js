@@ -1,4 +1,6 @@
 // ./src/main.js
+import './game.js';  // garanterar att game.js körs och lägger startGame på window
+
 // Ladda modulerna så både named-exports och window.* finns
 import * as config    from './config.js';
 import * as stateMod  from './state.js';
