@@ -1,43 +1,50 @@
-// Minimal state och start – allt på plats
-export const state = {};
+// ./src/game.js
+import { state, currentYear } from './state.js';
+import { showAppHideSplash, updateTop, renderOwned, note } from './ui.js';
+import { ensureMarketForThisYear } from './market.js';
 
 export function startGame() {
-  try {
-    console.log('startGame() körs ✅');
+  state.player = state.player || {};
+  state.notes  = state.notes  || [];
+  state.owned  = state.owned  || [];
 
-    state.player = state.player || {};
-    state.notes  = state.notes  || [];
-    state.owned  = state.owned  || [];
+  if (state.cash   == null) state.cash   = 10_000_000;
+  if (state.debt   == null) state.debt   = 0;
+  if (state.rate   == null) state.rate   = 3.0;
+  if (state.market == null) state.market = 1.00;
+  if (state.year   == null) state.year   = 1;
 
-    if (state.cash   == null) state.cash   = 10_000_000;
-    if (state.debt   == null) state.debt   = 0;
-    if (state.rate   == null) state.rate   = 3.0;
-    if (state.market == null) state.market = 1.00;
-    if (state.year   == null) state.year   = 1;
-
-    // Visa appen / göm splash
-    const splash = document.getElementById('splash');
-    const app    = document.getElementById('appWrap');
-    if (splash) splash.style.display = 'none';
-    if (app)    app.style.display    = 'block';
-
-    // Rendera top
-    const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent = val; };
-    set('cash',    Number(state.cash||0).toLocaleString('sv-SE'));
-    set('debtTop', Number(state.debt||0).toLocaleString('sv-SE'));
-    set('yearNow', String(state.year||1));
-    set('market',  (Number(state.market||1).toFixed(2)) + '×');
-    set('rate',    (Number(state.rate||0).toFixed(1)));
-
-    // Enkel “du har inga fastigheter”-text
-    const props = document.getElementById('props');
-    if (props) props.textContent = 'Du äger inga fastigheter ännu.';
-
-  } catch (e) {
-    console.error('startGame fel:', e);
-    alert('Kunde inte starta spelet: ' + e.message);
-  }
+  showAppHideSplash?.();
+  ensureMarketForThisYear?.();
+  updateTop?.();
+  renderOwned?.();
+  note?.('Välkommen! Ditt äventyr börjar nu.');
 }
 
-// exponera globalt (för inline onclick och nödbindning)
-Object.assign(window, { startGame });
+export function nextPeriod() {
+  state.year = Number(state.year || 1) + 1;
+  ensureMarketForThisYear?.();
+  updateTop?.();
+  renderOwned?.();
+  if (state.year >= 16) endGame();
+}
+
+function fmt(n){ try { return Number(n||0).toLocaleString('sv-SE'); } catch { return String(n); } }
+function summarizeEnd(){
+  const owned = state.owned || [];
+  const worth = owned.reduce((s,b)=> s + Number((b.basePrice??b.price??0)||0), 0);
+  const avgSat = owned.length ? Math.round(owned.reduce((s,b)=> s + Number(b?.sat||0),0)/owned.length) : 0;
+  return { worth, props: owned.length, avgSat, year: currentYear?.() ?? state.year ?? 1 };
+}
+
+export function endGame(){
+  const s = summarizeEnd();
+  const el = document.getElementById('endSummary');
+  if (el) el.innerHTML =
+    `Nettoförmögenhet: <b>${fmt(s.worth)}</b> kr<br>`+
+    `Fastigheter: <b>${s.props}</b> • Snittnöjdhet: <b>${s.avgSat}%</b>`;
+  const m = document.getElementById('endModal'); if (m) m.style.display = 'flex';
+  note?.('Spelet är slut – bra spelat!');
+}
+
+Object.assign(window, { startGame, nextPeriod, endGame });
