@@ -45,7 +45,21 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-      <button class="start" id="startBtn" type="button">Starta spelet</button>
+      <button
+  id="startBtn"
+  type="button"
+  class="start"
+  style="position:relative; z-index:9999; pointer-events:auto"
+  onclick="(window.startGame||function(){
+    const s=document.getElementById('splash');
+    const a=document.getElementById('appWrap');
+    if(s) s.style.display='none';
+    if(a) a.style.display='block';
+    console.warn('[fallback] startGame saknas – visade appen ändå');
+  })()"
+>
+  Starta spelet
+</button>
       <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
     </div>
   </div>
