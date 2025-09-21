@@ -6,7 +6,7 @@
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    /* Säkerställ helsidig splash och klickbara knappar */
+    /* Säkerställ helsidig splash och klickbara knappar överst */
     html, body { margin:0; background:#0b1a44; color:#fff; }
     .splash { min-height:100vh; position:relative; z-index:1000; }
     #startBtn, #openHS, #openHSStart { position:relative; z-index:1001; pointer-events:auto; }
@@ -14,9 +14,12 @@
 </head>
 <body>
 
-  <!-- Splash / start -->
+  <!-- SPLASH / START -->
   <div class="splash" id="splash">
-    <img alt="Maskot" onerror="this.style.display='none'" src="assets/mascot.png" style="display:block;margin:24px auto;max-width:180px"/>
+    <img alt="Maskot" onerror="this.style.display='none'"
+         src="assets/mascot.png"
+         style="display:block;margin:24px auto;max-width:180px"/>
+
     <div class="title">TAPAJOS – Det roliga fastighetsbolaget</div>
     <div class="sub">Bygg, förvalta och gör vinst på 15 år</div>
     <div class="Title">
@@ -43,24 +46,25 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-      <!-- Viktigt: kör riktiga startGame direkt -->
-     <button class="start" id="startBtn" type="button"
-  onclick="(window.startGame||function(){
-    const s=document.getElementById('splash');
-    const a=document.getElementById('appWrap');
-    if(s) s.style.display='none';
-    if(a) a.style.display='block';
-    console.warn('[fallback] startGame saknas – visade appen ändå');
-  })()">
-  Starta spelet
-</button>
-      <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
+      <!-- Kör riktiga startGame om den finns, annars fallback som gömmer splash & visar appen -->
+      <button class="start" id="startBtn" type="button"
+        onclick="(window.startGame||function(){
+          const s=document.getElementById('splash');
+          const a=document.getElementById('appWrap');
+          if(s) s.style.display='none';
+          if(a) a.style.display='block';
+          console.warn('[fallback] startGame saknas – visade appen ändå');
+        })()">
+        Starta spelet
+      </button>
+
+      <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">
+        Highscore 🏆
+      </button>
     </div>
   </div>
 
-
-
-  <!-- Själva appen -->
+  <!-- APP -->
   <div id="appWrap" class="wrap" style="display:none">
     <div class="topbar">
       <div class="brand">
@@ -105,7 +109,7 @@
     </div>
   </div>
 
-  <!-- Highscore-modal -->
+  <!-- HIGHSCORE-MODAL -->
   <div id="hsModal" class="modal" style="display:none">
     <div class="pinboard">
       <div class="hs-header">
@@ -118,17 +122,13 @@
     </div>
   </div>
 
-  <!-- Modaler (innehåll renderas av JS) -->
+  <!-- Övriga modaler (renderas av JS) -->
   <div id="marketModal" class="modal">…</div>
   <div id="negModal" class="modal">…</div>
   <div id="endModal" class="modal">…</div>
   <div id="eventModal" class="modal">…</div>
 
-
-
-
   <!-- Ladda Main som ES-modul -->
- <script type="module" src="./src/main.js"></script>
-  
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
