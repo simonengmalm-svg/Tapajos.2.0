@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
   <link rel="stylesheet" href="style.css"/>
+
   <style>
     html, body { margin:0; background:#0b1a44; color:#fff; }
     .splash { min-height:100vh; position:relative; z-index:1000; }
+    /* knappar överst och klickbara */
     #startBtn, #openHS, #openHSStart, #openMarket, #openMarketTop {
-      position: relative; z-index: 1001; pointer-events: auto;
+      position: relative; z-index: 2147483647; pointer-events: auto;
     }
+    /* döda ev. pseudo-overlays som kan blocka klick */
+    .splash::before, .splash::after { content:none !important; pointer-events:none !important; }
   </style>
 </head>
 <body>
@@ -45,21 +49,7 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-      <button
-  id="startBtn"
-  type="button"
-  class="start"
-  style="position:relative; z-index:9999; pointer-events:auto"
-  onclick="(window.startGame||function(){
-    const s=document.getElementById('splash');
-    const a=document.getElementById('appWrap');
-    if(s) s.style.display='none';
-    if(a) a.style.display='block';
-    console.warn('[fallback] startGame saknas – visade appen ändå');
-  })()"
->
-  Starta spelet
-</button>
+      <button id="startBtn" type="button" class="start">Starta spelet</button>
       <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
     </div>
   </div>
@@ -129,27 +119,46 @@
   <div id="endModal" class="modal">…</div>
   <div id="eventModal" class="modal">…</div>
 
-  <!-- Klick-wire för start -->
+  <!-- EN gemensam, robust wire längst ned -->
   <script>
     (function () {
-      var btn = document.getElementById('startBtn');
-      if (!btn) return;
-      btn.addEventListener('click', function (e) {
+      function fallback() {
+        const s = document.getElementById('splash');
+        const a = document.getElementById('appWrap');
+        if (s) s.style.display = 'none';
+        if (a) a.style.display = 'block';
+        console.warn('[fallback] startGame saknas – visade appen ändå');
+      }
+
+      // fånga ALLA klick på startknappen (capturing)
+      window.addEventListener('click', function (e) {
+        const btn = e.target && e.target.closest && e.target.closest('#startBtn');
+        if (!btn) return;
         e.preventDefault();
-        if (typeof window.startGame === 'function') {
-          window.startGame();
-        } else {
-          var s = document.getElementById('splash');
-          var a = document.getElementById('appWrap');
-          if (s) s.style.display = 'none';
-          if (a) a.style.display = 'block';
-          console.warn('[fallback] startGame saknas – visade appen ändå');
+        (window.startGame || fallback)();
+      }, true);
+
+      // extra wire om DOM redan finns
+      function wire() {
+        const btn = document.getElementById('startBtn');
+        if (btn && !btn.dataset.wired) {
+          btn.addEventListener('click', function (e) { e.preventDefault(); (window.startGame || fallback)(); }, { capture:true });
+          btn.dataset.wired = '1';
         }
-      }, { capture:true });
+        const m1 = document.getElementById('openMarket');
+        const m2 = document.getElementById('openMarketTop');
+        if (m1 && !m1.dataset.wired) { m1.addEventListener('click', () => window.openMarket?.(), { capture:true }); m1.dataset.wired='1'; }
+        if (m2 && !m2.dataset.wired) { m2.addEventListener('click', () => window.openMarket?.(), { capture:true }); m2.dataset.wired='1'; }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wire, { once:true });
+      } else {
+        wire();
+      }
     })();
   </script>
 
-  <!-- Ladda Main som ES-modul -->
+  <!-- Ladda Main som ES-modul (måste exportera/assign:a window.startGame) -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
