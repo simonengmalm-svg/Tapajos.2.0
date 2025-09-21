@@ -67,7 +67,14 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-      <button class="start" id="startBtn" type="button">Starta spelet</button>
+      <button id="startBtn" type="button"
+  onclick="(window.startGame||function(){
+    document.getElementById('splash').style.display='none';
+    document.getElementById('appWrap').style.display='block';
+    console.warn('[fallback] startGame saknas – visade appen ändå');
+  })()">
+  Starta spelet
+</button>
       <button class="btn ghost" id="openHS" type="button">Highscore 🏆</button>
     </div>
   </div>
