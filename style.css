@@ -1,7 +1,8 @@
 :root{
-    --bg:#0e0f17; --panel:#0f1729; --accent:#ffd34d; --text:#fff; --muted:#a6b0c3;
-    --ok:#7bdcff; --warn:#ffb84d; --bad:#ff6b6b; --good:#2a8f6e; --mid:#b78834; --poor:#9b2d30; --disabled:#9ca3af;
-  }
+  --bg:#0e0f17; --panel:#0f1729; --accent:#ffd34d; --text:#fff; --muted:#a6b0c3;
+  --ok:#7bdcff; --warn:#ffb84d; --bad:#ff6b6b; --good:#2a8f6e; --mid:#b78834; --poor:#9b2d30; --disabled:#9ca3af;
+  --btn-bg:#1f2937; --btn-bg-alt:#334155; --btn-border:#475569; --btn-shadow: rgba(0,0,0,.2);
+}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
   *{box-sizing:border-box}
   .wrap{display:grid;grid-template-rows:auto 1fr; height:100%}
@@ -193,19 +194,7 @@
   --btn-shadow: rgba(0,0,0,.2);
 }
 
-/* ====== Bas-knapp (om du redan har .btn – komplettera gärna) ====== */
-.btn{
-  background: var(--btn-bg);
-  border: 1px solid var(--btn-border);
-  color: var(--cant);
-  border-radius: 10px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 6px var(--btn-shadow);
-  transition: color .15s ease, background-color .15s ease, transform .04s ease, opacity .15s ease, filter .15s ease;
-  cursor: pointer;
-  user-select: none;
-  will-change: color, background-color, transform, opacity, filter;
-}
+
 .btn.mini{ padding: 6px 10px; font-size: 0.95rem; }
 .btn.alt{ background: var(--btn-bg-alt); }
 
@@ -404,3 +393,9 @@ footer, .footer, .bottom, .page-bottom { display: none !important; }
 
 .splash { position:relative; z-index:1000; pointer-events:auto; }
 #startBtn { position:relative; z-index:9999; pointer-events:auto; }
+
+:root{
+  --bg:#0e0f17; --panel:#0f1729; --accent:#ffd34d; --text:#fff; --muted:#a6b0c3;
+  --ok:#7bdcff; --warn:#ffb84d; --bad:#ff6b6b; --good:#2a8f6e; --mid:#b78834; --poor:#9b2d30; --disabled:#9ca3af;
+  --btn-bg:#1f2937; --btn-bg-alt:#334155; --btn-border:#475569; --btn-shadow: rgba(0,0,0,.2);
+}
