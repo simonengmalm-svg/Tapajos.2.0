@@ -6,10 +6,12 @@
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    /* Säkerställ helsidig splash och klickbara knappar överst */
     html, body { margin:0; background:#0b1a44; color:#fff; }
     .splash { min-height:100vh; position:relative; z-index:1000; }
-    #startBtn, #openHS, #openHSStart { position:relative; z-index:1001; pointer-events:auto; }
+    /* Se till att knapparna kan klickas och ligger överst */
+    #startBtn, #openHS, #openHSStart {
+      position: relative; z-index: 1001; pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -46,21 +48,8 @@
 
     <!-- Knappar -->
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-      <!-- Kör riktiga startGame om den finns, annars fallback som gömmer splash & visar appen -->
-      <button class="start" id="startBtn" type="button"
-        onclick="(window.startGame||function(){
-          const s=document.getElementById('splash');
-          const a=document.getElementById('appWrap');
-          if(s) s.style.display='none';
-          if(a) a.style.display='block';
-          console.warn('[fallback] startGame saknas – visade appen ändå');
-        })()">
-        Starta spelet
-      </button>
-
-      <button class="btn ghost" id="openHS" type="button" onclick="window.openHSModal?.()">
-        Highscore 🏆
-      </button>
+      <button class="start" id="startBtn" type="button">Starta spelet</button>
+      <button class="btn ghost" id="openHS" type="button">Highscore 🏆</button>
     </div>
   </div>
 
@@ -82,7 +71,7 @@
       <div class="badge">🏦 Ränta: <span id="rate">3.0</span>%</div>
 
       <button id="next" class="btn alt">Nästa år ▶</button>
-      <button class="btn ghost" id="openHSStart" type="button" onclick="window.openHSModal?.()">Highscore 🏆</button>
+      <button class="btn ghost" id="openHSStart" type="button">Highscore 🏆</button>
     </div>
 
     <div class="main">
@@ -114,7 +103,7 @@
     <div class="pinboard">
       <div class="hs-header">
         <div class="hs-title">🏆 TAPAJOS HIGHSCORE</div>
-        <button id="hsClose" class="btn close" onclick="window.closeHSModal?.()">Stäng</button>
+        <button id="hsClose" class="btn close">Stäng</button>
       </div>
       <div class="hs-sub">Top 10 ● Nettoförmögenhet</div>
       <div id="hsBoard" class="hs-board"></div>
@@ -122,11 +111,42 @@
     </div>
   </div>
 
-  <!-- Övriga modaler (renderas av JS) -->
+  <!-- Övriga modaler -->
   <div id="marketModal" class="modal">…</div>
   <div id="negModal" class="modal">…</div>
   <div id="endModal" class="modal">…</div>
   <div id="eventModal" class="modal">…</div>
+
+  <!-- Robust bindning av knappar + fallback -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      function fallbackStart() {
+        var s = document.getElementById('splash');
+        var a = document.getElementById('appWrap');
+        if (s) s.style.display = 'none';
+        if (a) a.style.display = 'block';
+        console.warn('[fallback] startGame saknas – visade appen ändå');
+      }
+      function handleStart(e) {
+        e.preventDefault();
+        (typeof window.startGame === 'function' ? window.startGame : fallbackStart)();
+      }
+      var startBtn = document.getElementById('startBtn');
+      if (startBtn && !startBtn.dataset.wired) {
+        // lyssna på både pointerup och click i capturing-läge
+        startBtn.addEventListener('pointerup', handleStart, { capture:true });
+        startBtn.addEventListener('click',     handleStart, { capture:true });
+        startBtn.dataset.wired = '1';
+      }
+
+      // Highscore-knappar (öppna om funktionen finns)
+      var hs1 = document.getElementById('openHS');
+      var hs2 = document.getElementById('openHSStart');
+      function openHS() { if (typeof window.openHSModal === 'function') window.openHSModal(); }
+      hs1 && hs1.addEventListener('click', openHS, { capture:true });
+      hs2 && hs2.addEventListener('click', openHS, { capture:true });
+    });
+  </script>
 
   <!-- Ladda Main som ES-modul -->
   <script type="module" src="./src/main.js"></script>
