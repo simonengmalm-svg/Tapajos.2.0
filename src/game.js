@@ -14,6 +14,13 @@ export function startGame() {
   if (state.market == null) state.market = 1.00;
   if (state.year   == null) state.year   = 1;
 
+  // 🔧 Hård växel: visa appen oavsett UI-helper
+  const s = document.getElementById('splash');
+  const a = document.getElementById('appWrap');
+  if (s) s.style.display = 'none';
+  if (a) a.style.display = 'block';
+
+  // (kör mjuka helpers om de finns)
   showAppHideSplash?.();
   ensureMarketForThisYear?.();
   updateTop?.();
