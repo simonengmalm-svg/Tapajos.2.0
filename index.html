@@ -9,11 +9,12 @@
   <style>
     html, body { margin:0; background:#0b1a44; color:#fff; }
     .splash { min-height:100vh; position:relative; z-index:1000; }
-    /* knappar överst och klickbara */
+
+    /* Knappar överst och klickbara */
     #startBtn, #openHS, #openHSStart, #openMarket, #openMarketTop {
       position: relative; z-index: 2147483647; pointer-events: auto;
     }
-    /* döda ev. pseudo-overlays som kan blocka klick */
+    /* Döda ev. pseudo-overlays som kan blocka klick */
     .splash::before, .splash::after { content:none !important; pointer-events:none !important; }
   </style>
 </head>
@@ -116,10 +117,18 @@
   <!-- Modaler (innehåll renderas av JS) -->
   <div id="marketModal" class="modal">…</div>
   <div id="negModal" class="modal">…</div>
-  <div id="endModal" class="modal">…</div>
+  <div id="endModal" class="modal">
+    <div class="box">
+      <h3>Spelet är slut</h3>
+      <div id="endSummary">—</div>
+      <div style="margin-top:10px;text-align:right">
+        <button class="btn" onclick="this.closest('.modal').style.display='none'">Stäng</button>
+      </div>
+    </div>
+  </div>
   <div id="eventModal" class="modal">…</div>
 
-  <!-- EN gemensam, robust wire längst ned -->
+  <!-- Robust wire längst ned -->
   <script>
     (function () {
       function fallback() {
@@ -130,7 +139,7 @@
         console.warn('[fallback] startGame saknas – visade appen ändå');
       }
 
-      // fånga ALLA klick på startknappen (capturing)
+      // Fånga ALLA klick på startknappen (capturing)
       window.addEventListener('click', function (e) {
         const btn = e.target && e.target.closest && e.target.closest('#startBtn');
         if (!btn) return;
@@ -138,11 +147,14 @@
         (window.startGame || fallback)();
       }, true);
 
-      // extra wire om DOM redan finns
+      // Extra wire när DOM är redo
       function wire() {
         const btn = document.getElementById('startBtn');
         if (btn && !btn.dataset.wired) {
-          btn.addEventListener('click', function (e) { e.preventDefault(); (window.startGame || fallback)(); }, { capture:true });
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            (window.startGame || fallback)();
+          }, { capture:true });
           btn.dataset.wired = '1';
         }
         const m1 = document.getElementById('openMarket');
@@ -158,7 +170,7 @@
     })();
   </script>
 
-  <!-- Ladda Main som ES-modul (måste exportera/assign:a window.startGame) -->
+  <!-- Ladda Main som ES-modul -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
