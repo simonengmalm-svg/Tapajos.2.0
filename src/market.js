@@ -1,85 +1,135 @@
-// ./src/ui.js
-import { state, TYPES, currentYear } from './state.js';
+// ./src/market.js
+import { state, TYPES, currentYear, fmt, pick, uuid, randInt } from './state.js';
+import { updateTop, renderOwned, note } from './ui.js';
 
-const $ = (id) => document.getElementById(id);
+// === Marknadstillstånd (håll samma namn som gamla spelet) ===
+state.marketPool = state.marketPool || [];
+state.marketYear = state.marketYear || 0;
 
-export function showAppHideSplash() {
-  const name = $('#startName')?.value?.trim();
-  const company = $('#startCompany')?.value?.trim();
-  const remember = $('#rememberProfile');
+// --- Pris & offert ---
+function priceOf(tid, cond, central) {
+  const t = TYPES[tid];
+  const [min, max] = t.price;
+  const condF = (cond === 'ny' ? 1.0 : cond === 'sliten' ? 0.85 : 0.7);
+  const centF = central ? 1.2 : 0.9;
+  const base = min + Math.random() * (max - min);
+  return Math.round(base * condF * centF * (state.market ?? 1));
+}
 
-  state.player = state.player || {};
-  if (name) state.player.name = name;
-  if (company) state.player.company = company;
-  if (remember?.checked) {
-    try { localStorage.setItem('tapajos-profile-v1', JSON.stringify({ name, company })); } catch {}
+function makeOffer(tid, cond, central){
+  const price = priceOf(tid, cond, central);
+  const [umin, umax] = TYPES[tid].units;
+  const units = randInt(umin, umax);
+  return { id: uuid(), tid, cond, central, price, units };
+}
+
+function generateYearMarket(n=4){
+  const keys = Object.keys(TYPES);
+  const arr = [];
+  for (let i=0; i<n; i++){
+    const tid = pick(keys);
+    const cond = pick(['ny','sliten','forfallen']);
+    const central = Math.random() < 0.5;
+    arr.push(makeOffer(tid, cond, central));
   }
-
-  $('#splash')?.style && ($('#splash').style.display = 'none');
-  $('#appWrap')?.style && ($('#appWrap').style.display = 'block');
-
-  updateTop(); renderOwned();
+  state.marketPool = arr.sort((a,b)=>a.price-b.price);
+  state.marketYear = currentYear();
 }
 
-export function renderOwned() {
-  const wrap = $('#props'); if (!wrap) return;
-  wrap.innerHTML = '';
-  const owned = state.owned || [];
-  if (!owned.length) {
-    wrap.innerHTML = '<div class="meta">Du äger inga fastigheter ännu. Klicka på “Fastighetsmarknad”.</div>';
-    return;
+// Publikt API
+export function ensureMarketForThisYear(){
+  if (state.marketYear !== currentYear() || !state.marketPool.length){
+    generateYearMarket(4);
+    note?.(`Nytt marknadsutbud för år ${currentYear()}.`);
   }
-  owned.forEach(b => {
-    const tinfo = TYPES?.[b.tid];
-    const card = document.createElement('div');
-    card.className = 'prop-card';
-    const condTxt = (typeof b.cond==='string' && b.cond==='forfallen') ? 'förfallen' : (b.cond ?? '-');
-    const price   = (b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE');
-
-    card.innerHTML = `
-      <div class="prop-title">${tinfo?.name ?? 'Fastighet'} — ${b.units ?? b.baseUnits ?? '?'} lgh</div>
-      <div class="prop-meta">Skick: ${typeof b.cond==='number' ? `${b.cond}/10` : condTxt}
-        • Pris: ${price} kr
-        • Central: ${b.central ? 'Ja' : 'Nej'}</div>`;
-    wrap.appendChild(card);
-  });
 }
 
-export function updateTop() {
-  $('#cash')   ?.replaceChildren(document.createTextNode((state.cash   ?? 0).toLocaleString('sv-SE')));
-  $('#debtTop')?.replaceChildren(document.createTextNode((state.debt   ?? 0).toLocaleString('sv-SE')));
-  $('#yearNow')?.replaceChildren(document.createTextNode(String(currentYear?.() ?? state.month ?? 1)));
-  $('#market') ?.replaceChildren(document.createTextNode(((state.market ?? 1)).toFixed?.(2) + '×'));
-  $('#rate')   ?.replaceChildren(document.createTextNode(String((state.rate ?? 0)*100)));
+export function openMarket(){
+  ensureMarketForThisYear();
+  renderMarket();
 }
 
-export function note(msg){
-  state.notes = state.notes || [];
-  if (msg) state.notes.push({ t: Date.now(), msg });
-  const list = $('#notes'); if (!list) return;
-  list.innerHTML = state.notes.length
-    ? state.notes.slice(-50).map(n=>{
-        const d=new Date(n.t).toLocaleTimeString('sv-SE');
-        return `<div class="note">[${d}] ${n.msg}</div>`
-      }).join('')
-    : '—';
+export function closeMarket(){
+  const m = document.getElementById('marketModal');
+  if (m) m.style.display = 'none';
 }
 
-// 👉 BIND ALLA KÄRNKNAPPAR, inkl. top-knapp för marknaden
-export function bindCoreButtonsOnce() {
-  const nextBtn   = $('#next');
-  const marketBtn = $('#openMarket');
-  const marketTop = $('#openMarketTop');
-  const hsBtn1    = $('#openHS');
-  const hsBtn2    = $('#openHSStart');
-  const hsClose   = $('#hsClose');
-
-  if (nextBtn && !nextBtn.dataset.wired)  { nextBtn.addEventListener('click', ()=> window.nextPeriod?.()); nextBtn.dataset.wired = '1'; }
-  if (marketBtn && !marketBtn.dataset.wired){ marketBtn.addEventListener('click', ()=> window.openMarket?.()); marketBtn.dataset.wired = '1'; }
-  if (marketTop && !marketTop.dataset.wired){ marketTop.addEventListener('click', ()=> window.openMarket?.()); marketTop.dataset.wired = '1'; }
-  if (hsBtn1 && !hsBtn1.dataset.wired)   { hsBtn1.addEventListener('click', ()=> window.openHSModal?.()); hsBtn1.dataset.wired = '1'; }
-  if (hsBtn2 && !hsBtn2.dataset.wired)   { hsBtn2.addEventListener('click', ()=> window.openHSModal?.()); hsBtn2.dataset.wired = '1'; }
-  if (hsClose && !hsClose.dataset.wired) { hsClose.addEventListener('click', ()=> window.closeHSModal?.()); hsClose.dataset.wired = '1'; }
+function removeOfferById(id){
+  state.marketPool = state.marketPool.filter(o => o.id !== id);
 }
 
-Object.assign(window, { bindCoreButtonsOnce, showAppHideSplash, renderOwned, updateTop, note });
+// --- Render ---
+export function renderMarket(){
+  const offersEl = document.getElementById('offers');   // <== SAMMA ID SOM I GAMLA HTML
+  const modal    = document.getElementById('marketModal');
+  if (!offersEl || !modal) return;
+
+  offersEl.innerHTML = '';
+  if (!state.marketPool.length){
+    offersEl.innerHTML = `<div class="meta">Inga fler objekt till salu i år. Tryck “Nästa år”.</div>`;
+  } else {
+    state.marketPool.forEach(off=>{
+      const t = TYPES[off.tid];
+      const box = document.createElement('div'); box.className='offer';
+      const ic  = document.createElement('div'); ic.className=`small ${t.cls} C-${off.cond}`;
+
+      const left = document.createElement('div');
+      left.innerHTML =
+        `<div><b>${t.name}</b> ${off.central ? '• Centralt' : '• Förort'} • Lgh: <b>${off.units}</b></div>
+         <div class="meta">Skick: ${off.cond==='forfallen'?'förfallen':off.cond}</div>
+         <div class="price">Pris: ${fmt(off.price)} kr</div>`;
+
+      const buyCash = document.createElement('button'); buyCash.className='btn mini'; buyCash.textContent='Köp kontant';
+      buyCash.onclick = ()=>{
+        if ((state.cash ?? 0) < off.price){ alert('Otillräcklig kassa'); return; }
+        state.cash -= off.price;
+        addOwnedFromOffer(off);
+      };
+
+      const buyLoan = document.createElement('button'); buyLoan.className='btn mini alt'; buyLoan.textContent='Köp med lån';
+      buyLoan.onclick = ()=>{
+        const down = Math.round(off.price * 0.30);
+        if ((state.cash ?? 0) < down){ alert('Behöver kontantinsats: ' + fmt(down) + ' kr'); return; }
+        state.cash -= down;
+        // Enkelt “lånefrö”; full lånelogik kan bo i loans.js om du vill
+        addOwnedFromOffer(off, { loanSeed: true, loanDown: down });
+      };
+
+      const right = document.createElement('div'); right.style.display='grid'; right.style.gap='6px';
+      right.append(buyCash, buyLoan);
+
+      box.append(ic, left, right);
+      offersEl.appendChild(box);
+    });
+  }
+  modal.style.display = 'flex';
+}
+
+function addOwnedFromOffer(off, extra = {}){
+  const b = {
+    ...off,
+    basePrice: off.price,
+    baseCond:  off.cond,
+    baseUnits: off.units,
+    baseMarket: state.market,
+    boughtAtYear: currentYear(),
+    ...extra
+  };
+  // init “sociala” fält (matchar gamla spelet)
+  b.sat = Math.floor(60 + (b.cond === 'ny' ? +15 : b.cond === 'sliten' ? -10 : -20) + (b.central ? +5 : 0));
+  b.consent = Math.max(0, Math.min(100, Math.floor(b.sat - 10 + (b.cond === 'ny' ? +10 : 0))));
+  b.status = (b.consent>=70 && b.sat>=70 && b.cond==='ny') ? 'Klar för ombildning' : (b.sat<40 ? 'Oro i föreningen' : b.sat<60 ? 'Skört läge' : 'Stabilt');
+  b.maintMult = 1.0; b.rentBoost = 0; b.valueBoost = 0;
+  b.project = null; b.converting = null;
+  b.eventsUsed = 0; b.eventsCap = (Math.random()<0.35?2:1);
+  b.energyUpgrades = 0; b.energyUpgradesMax = 3;
+
+  state.owned = state.owned || [];
+  state.owned.push(b);
+  removeOfferById(off.id);
+  updateTop?.(); renderOwned?.();
+  note?.(`Köpt: ${TYPES[off.tid].name} (${off.units} lgh) för ${fmt(off.price)} kr.`);
+}
+
+// Exponera globalt (HTML-knappar använder dessa)
+Object.assign(window, { openMarket, closeMarket, ensureMarketForThisYear, renderMarket });
