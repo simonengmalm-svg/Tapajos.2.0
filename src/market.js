@@ -1,86 +1,74 @@
 // src/market.js
-import { state, TYPES, currentYear } from './state.js';
+import {
+  state, TYPES, CONDITIONS, currentYear,
+  pick, randInt, uuid, condFactor
+} from './state.js';
 import { updateTop, renderOwned, note } from './ui.js';
 
 // ---------- Hjälp ----------
 const kr = (n) => Number(n || 0).toLocaleString('sv-SE') + ' kr';
-const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
-const rid = () => Math.random().toString(36).slice(2, 10);
 
-// Safe access till en typ
-function getType(tid) {
-  return TYPES?.[tid] || { name: 'Fastighet', ppu: 12_000, minU: 6, maxU: 40 };
+// Pris = slump i type.price-intervallet * marknad * lägesmult * kond.mult
+function calcPrice(tid, cond, central) {
+  const t = TYPES[tid] || {};
+  const [pmin, pmax] = t.price || [10_000_000, 20_000_000];
+  const base = randInt(Number(pmin), Number(pmax));
+  const marketMul = Number(state.market ?? 1.0);
+  const locMul = central ? Number(t.centralMult ?? 1) : Number(t.suburbMult ?? 1);
+  const cMul = condFactor(cond); // från state.js: ny=1.0, sliten=0.85, forfallen=0.7
+  const price = Math.round(base * marketMul * locMul * cMul / 1000) * 1000;
+  return Math.max(price, 0);
 }
 
-// Grundmodell: pris ≈ ppu * units * marknad * kond.faktor
-function calcPrice({ tid, units, cond, central }) {
-  const t = getType(tid);
-  const ppu = Number(t.ppu ?? 12_000);            // pris per lägenhet som default
-  const m = Number(state.market ?? 1);
-  const k = 0.9 + (Number(cond ?? 5) / 10) * 0.4; // 0.9–1.3 ungefär
-  const c = central ? 1.15 : 1.0;
-  return Math.round(ppu * Number(units || 1) * m * k * c / 1000) * 1000;
-}
-
-// ---------- Offertgenerering ----------
-// Du kan tweaka typkatalogen här om dina TYPES saknar fält.
-function randomOffer() {
-  // Välj en tid nyckel slumpat
-  const tids = Object.keys(TYPES || {});
-  const tid = tids.length ? tids[rnd(0, tids.length - 1)] : 'miljon';
-  const t = getType(tid);
-
-  const units = rnd(Number(t.minU ?? 6), Number(t.maxU ?? 60));
-  const cond  = rnd(4, 9);
-  const central = Math.random() < 0.35;
-
-  const off = {
-    id: rid(),
+function makeOffer(tid, cond, central) {
+  const t = TYPES[tid] || {};
+  const [umin, umax] = t.units || [6, 18];
+  const units = randInt(Number(umin), Number(umax));
+  const price = calcPrice(tid, cond, central);
+  return {
+    id: uuid(),
     tid,
     name: t.name || 'Fastighet',
     units,
-    cond,
-    central,
+    cond,                // 'ny' | 'sliten' | 'forfallen'
+    central: !!central,
+    price,
+    // basfält som UI/ekonomi kan använda senare
+    basePrice: price,
+    baseCond: cond,
+    baseUnits: units,
+    baseMarket: Number(state.market ?? 1),
   };
-  off.price = calcPrice(off);
-  off.basePrice = off.price;
-  return off;
 }
 
-function generateOffers(n = 6) {
+// ---------- Utbud / år ----------
+export function generateYearMarket(n = 6) {
+  const tids = Object.keys(TYPES || {});
   const arr = [];
-  for (let i = 0; i < n; i++) arr.push(randomOffer());
-  return arr;
+  for (let i = 0; i < n; i++) {
+    const tid = tids.length ? pick(tids) : 'miljon';
+    const cond = pick(CONDITIONS);        // 'ny'/'sliten'/'forfallen'
+    const central = Math.random() < 0.5;  // 50% central
+    arr.push(makeOffer(tid, cond, central));
+  }
+  state.marketPool = arr.sort((a,b) => a.price - b.price);
+  state.marketYear = currentYear(); // din currentYear() = state.month
 }
 
-// ---------- Publika API:n ----------
-
-// Skapa nytt utbud om året ändrats eller saknas
 export function ensureMarketForThisYear() {
-  const y = Number(currentYear?.() ?? state.year ?? 1);
-  state.marketYear = state.marketYear ?? 0;
-  state.offers = state.offers || [];
-
-  if (state.marketYear !== y || !state.offers.length) {
-    state.offers = generateOffers(6);
-    state.marketYear = y;
-    note?.(`Nytt marknadsutbud för år ${y}.`);
+  if (state.marketYear !== currentYear() || !(state.marketPool || []).length) {
+    generateYearMarket(6);
+    note?.(`Nytt marknadsutbud för år ${currentYear()}.`);
   }
 }
 
-// Ta bort offert efter köp
 export function removeOfferById(id) {
-  if (!id) return;
-  state.offers = (state.offers || []).filter(o => o.id !== id);
-  // Uppdatera om modalen är öppen
-  if (document.getElementById('marketModal')?.style?.display === 'flex') {
-    renderMarket();
-  }
+  state.marketPool = (state.marketPool || []).filter(o => o.id !== id);
 }
 
-// Själva köpet
+// ---------- Köp ----------
 export function acceptOffer(off, withLoan = false) {
-  if (!off) return { ok: false, reason: 'Ingen offert' };
+  if (!off) return { ok:false, reason:'Ingen offert' };
 
   const price = Number(off.price ?? off.basePrice ?? 0);
   if (!Number.isFinite(price) || price <= 0) return { ok:false, reason:'Felaktigt pris' };
@@ -88,99 +76,62 @@ export function acceptOffer(off, withLoan = false) {
   state.cash = Number(state.cash ?? 0);
 
   if (withLoan) {
-    // 30% kontantinsats, resten får du bygga ut som lånlogik
-    const down = Math.round(price * 0.30);
-    if (state.cash < down) return { ok:false, reason: `Kontantinsats saknas (${kr(down)})` };
+    const down = Math.round(price * 0.30); // 30% kontantinsats
+    if (state.cash < down) return { ok:false, reason:`Behöver kontantinsats: ${kr(down)}` };
     state.cash -= down;
-    // TODO: lägg till lånepost / ränta / amort (state.debt += price - down)
+    // Här kan du lägga till lånlogik (state.loans push, ev. state.debt om du använder det)
   } else {
-    if (state.cash < price) return { ok:false, reason: `Otillräcklig kassa (${kr(price)})` };
+    if (state.cash < price) return { ok:false, reason:`Otillräcklig kassa: ${kr(price)}` };
     state.cash -= price;
   }
 
-  // Skapa det vi äger
-  const bought = {
-    ...off,
-    price,
+  // Lägg i owned
+  const b = {
+    id: uuid(),
+    tid: off.tid,
+    units: off.units,
+    cond: off.cond,
+    central: !!off.central,
     basePrice: price,
-    baseUnits: Number(off.units || 0),
-    baseCond: Number(off.cond ?? 5),
+    baseCond: off.cond,
+    baseUnits: off.units,
     baseMarket: Number(state.market ?? 1),
-    boughtAtYear: Number(currentYear?.() ?? state.year ?? 1),
-    loanSeed: !!withLoan,
+    boughtAtYear: currentYear(),
   };
-
   state.owned = state.owned || [];
-  state.owned.push(bought);
+  state.owned.push(b);
 
-  // Plocka bort från utbudet
+  // Ta bort från marknaden
   removeOfferById(off.id);
 
   // UI
   updateTop?.();
   renderOwned?.();
 
-  const tname = getType(off.tid).name || off.name || 'Fastighet';
-  note?.(`Köpt: ${tname} (${off.units ?? '?'} lgh) för ${kr(price)}${withLoan ? ' (med lån)' : ''}.`);
-
-  return { ok: true };
+  note?.(`Köpt: ${off.name} (${off.units} lgh) för ${kr(price)}${withLoan ? ' (med lån)' : ''}.`);
+  return { ok:true };
 }
 
-// ---------- Modal / UI ----------
+// ---------- Modal-UI ----------
+const $ = (id) => document.getElementById(id);
 
-export function openMarket() {
-  ensureMarketForThisYear();
-
-  const modal = document.getElementById('marketModal');
-  if (!modal) return console.warn('[market] marketModal saknas i DOM');
-
-  // Bygg innehållet
-  modal.innerHTML = `
-    <div class="box">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
-        <h3 style="margin:0">Fastighetsmarknad — år ${currentYear?.() ?? state.year ?? 1}</h3>
-        <button class="btn mini" id="marketCloseBtn">Stäng</button>
-      </div>
-      <div class="offers" id="offersWrap"></div>
-    </div>
-  `;
-
-  renderMarket(); // fyll korten
-
-  // Stäng
-  modal.style.display = 'flex';
-  modal.querySelector('#marketCloseBtn')?.addEventListener('click', closeMarket, { once:true });
-}
-
-export function closeMarket() {
-  const modal = document.getElementById('marketModal');
-  if (modal) modal.style.display = 'none';
-}
-
-// Rendera alla offers i modalen
-export function renderMarket() {
-  const wrap = document.getElementById('offersWrap');
-  if (!wrap) return;
-  const offers = state.offers || [];
-
-  if (!offers.length) {
+function renderOffersTo(wrap) {
+  const pool = state.marketPool || [];
+  if (!pool.length) {
     wrap.innerHTML = `<div class="meta">Inga erbjudanden just nu — prova “Nästa år”.</div>`;
     return;
   }
 
-  wrap.innerHTML = offers.map(o => {
-    const t = getType(o.tid);
-    const condTxt = (typeof o.cond === 'number') ? `${o.cond}/10` : (o.cond ?? '-');
+  wrap.innerHTML = pool.map(o => {
     return `
       <div class="offer" data-id="${o.id}">
-        <div class="small ${o.tid || ''}" title="${t.name || ''}"></div>
+        <div class="small ${TYPES[o.tid]?.cls || ''}" title="${o.name}"></div>
         <div>
-          <div style="font-weight:800">${t.name ?? 'Fastighet'} — ${o.units ?? '?'} lgh</div>
-          <div class="meta">Skick: ${condTxt} • Lägen: ${o.units ?? '-'} • Central: ${o.central ? 'Ja' : 'Nej'}</div>
-          <div class="meta">Marknadsfaktor: ${(state.market ?? 1).toFixed?.(2)}×</div>
+          <div style="font-weight:800">${o.name} — ${o.units} lgh ${o.central ? '• Central' : ''}</div>
+          <div class="meta">Skick: ${o.cond}</div>
+          <div class="meta">Pris: <b>${kr(o.price)}</b> • Marknad: ${(state.market ?? 1).toFixed?.(2)}×</div>
         </div>
         <div style="display:grid;gap:6px;justify-items:end">
-          <div style="font-weight:900">${kr(o.price)}</div>
           <button class="btn mini buy-cash">Köp kontant</button>
           <button class="btn mini alt buy-loan">Köp med lån</button>
         </div>
@@ -188,29 +139,59 @@ export function renderMarket() {
     `;
   }).join('');
 
-  // Wire:a knappar
+  // Wire knappar för varje kort
   wrap.querySelectorAll('.offer').forEach(card => {
     const id = card.getAttribute('data-id');
-    const off = (state.offers || []).find(o => o.id === id);
+    const off = (state.marketPool || []).find(o => o.id === id);
     if (!off) return;
-
     card.querySelector('.buy-cash')?.addEventListener('click', () => {
       const r = acceptOffer(off, false);
       if (!r.ok) alert(r.reason);
+      refresh();
     });
-
     card.querySelector('.buy-loan')?.addEventListener('click', () => {
       const r = acceptOffer(off, true);
       if (!r.ok) alert(r.reason);
+      refresh();
     });
   });
+
+  function refresh() {
+    // Rita om listan och topp/ägda efter köp
+    updateTop?.();
+    renderOwned?.();
+    renderOffersTo(wrap);
+  }
 }
 
-// ---------- Exportera globalt (för knappar i HTML / andra moduler) ----------
+export function openMarket() {
+  ensureMarketForThisYear();
+  const modal = $('#marketModal');
+  if (!modal) return console.warn('[market] #marketModal saknas');
+
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+        <h3 style="margin:0">Fastighetsmarknad — år ${currentYear()}</h3>
+        <button class="btn mini" id="marketCloseBtn">Stäng</button>
+      </div>
+      <div class="offers" id="offersWrap"></div>
+    </div>
+  `;
+  modal.querySelector('#marketCloseBtn')?.addEventListener('click', closeMarket, { once:true });
+
+  const wrap = modal.querySelector('#offersWrap');
+  renderOffersTo(wrap);
+}
+
+export function closeMarket() {
+  const modal = $('#marketModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// ---------- Globalt för HTML/console ----------
 Object.assign(window, {
-  openMarket,
-  closeMarket,
-  ensureMarketForThisYear,
-  acceptOffer,
-  removeOfferById,
+  openMarket, closeMarket,
+  ensureMarketForThisYear, acceptOffer, removeOfferById
 });
