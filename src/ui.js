@@ -10,7 +10,7 @@ export function showAppHideSplash() {
   const remember = $('#rememberProfile');
 
   state.player = state.player || {};
-  if (name) state.player.name = name;
+  if (name)    state.player.name = name;
   if (company) state.player.company = company;
 
   if (remember?.checked) {
@@ -28,20 +28,26 @@ export function showAppHideSplash() {
 export function renderOwned() {
   const wrap = $('#props'); if (!wrap) return;
   wrap.innerHTML = '';
+
   const owned = state.owned || [];
   if (!owned.length) {
-    const p = document.createElement('p'); p.textContent = 'Du äger inga fastigheter ännu.';
-    wrap.appendChild(p); return;
+    const p = document.createElement('p');
+    p.textContent = 'Du äger inga fastigheter ännu.';
+    wrap.appendChild(p);
+    return;
   }
+
   owned.forEach(b => {
     const card = document.createElement('div');
     card.className = 'prop-card';
     const tinfo = TYPES?.[b.tid];
     card.innerHTML = `
       <div class="prop-title">${tinfo?.name ?? 'Fastighet'} — ${b.units ?? '?'} lgh</div>
-      <div class="prop-meta">Skick: ${typeof b.cond==='number'? `${b.cond}/10` : (b.cond??'-')}
+      <div class="prop-meta">
+        Skick: ${typeof b.cond==='number' ? `${b.cond}/10` : (b.cond??'-')}
         • Pris: ${(b.basePrice ?? b.price ?? 0).toLocaleString('sv-SE')} kr
-        • Central: ${b.central ? 'Ja':'Nej'}</div>`;
+        • Central: ${b.central ? 'Ja' : 'Nej'}
+      </div>`;
     wrap.appendChild(card);
   });
 }
@@ -63,37 +69,42 @@ export function note(msg){
   list.innerHTML = state.notes.length
     ? state.notes.slice(-50).map(n=>{
         const d=new Date(n.t).toLocaleTimeString('sv-SE');
-        return `<div class="note">[${d}] ${n.msg}</div>`
+        return `<div class="note">[${d}] ${n.msg}</div>`;
       }).join('')
     : '—';
 }
 
-// Knyt kärnknappar (Start binds redan inline – vi drar inte i den)
+// Knyt kärnknappar (Start binds inline i HTML – vi rör inte den)
 export function bindCoreButtonsOnce() {
-  const nextBtn   = $('#next');
-  const marketBtn = $('#openMarket');
-  const hsBtn1    = $('#openHS');
-  const hsBtn2    = $('#openHSStart');
-  const hsClose   = $('#hsClose');
+  const nextBtn     = $('#next');
+  const marketBtn   = $('#openMarket');     // panel-knappen
+  const marketBtnTop= $('#openMarketTop');  // topbar-knappen (DEN SOM SAKNADES)
+  const hsBtn1      = $('#openHS');
+  const hsBtn2      = $('#openHSStart');
+  const hsClose     = $('#hsClose');
 
   if (nextBtn && !nextBtn.dataset.wired) {
-    nextBtn.addEventListener('click', ()=> window.nextPeriod?.());
+    nextBtn.addEventListener('click', ()=> window.nextPeriod?.(), { capture:true });
     nextBtn.dataset.wired = '1';
   }
   if (marketBtn && !marketBtn.dataset.wired) {
-    marketBtn.addEventListener('click', ()=> window.openMarket?.());
+    marketBtn.addEventListener('click', ()=> window.openMarket?.(), { capture:true });
     marketBtn.dataset.wired = '1';
   }
+  if (marketBtnTop && !marketBtnTop.dataset.wired) {
+    marketBtnTop.addEventListener('click', ()=> window.openMarket?.(), { capture:true });
+    marketBtnTop.dataset.wired = '1';
+  }
   if (hsBtn1 && !hsBtn1.dataset.wired) {
-    hsBtn1.addEventListener('click', ()=> window.openHSModal?.());
+    hsBtn1.addEventListener('click', ()=> window.openHSModal?.(), { capture:true });
     hsBtn1.dataset.wired = '1';
   }
   if (hsBtn2 && !hsBtn2.dataset.wired) {
-    hsBtn2.addEventListener('click', ()=> window.openHSModal?.());
+    hsBtn2.addEventListener('click', ()=> window.openHSModal?.(), { capture:true });
     hsBtn2.dataset.wired = '1';
   }
   if (hsClose && !hsClose.dataset.wired) {
-    hsClose.addEventListener('click', ()=> window.closeHSModal?.());
+    hsClose.addEventListener('click', ()=> window.closeHSModal?.(), { capture:true });
     hsClose.dataset.wired = '1';
   }
 }
