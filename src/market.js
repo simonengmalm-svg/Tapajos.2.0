@@ -1,6 +1,6 @@
 // src/market.js
 import {
-  state, TYPES, CONDITIONS, currentYear,
+  state, TYPES, CONDITIONS,
   pick, randInt, uuid, condFactor, condMaintMult
 } from './state.js';
 import { updateTop, renderOwned, note } from './ui.js';
@@ -9,41 +9,28 @@ import { updateTop, renderOwned, note } from './ui.js';
    Hjälpare
    ============================ */
 const kr = (n) => Number(n || 0).toLocaleString('sv-SE') + ' kr';
-const YEAR_NOW = () => {
-  // state.month är din "års-räknare", men vi backar upp med state.year om det finns.
+
+// Säkert ”nuvarande år” – funkar med både month (din primära) och year
+function YEAR_NOW() {
   const m = Number(state.month ?? NaN);
   const y = Number(state.year  ?? NaN);
   if (Number.isFinite(m) && m > 0) return m;
   if (Number.isFinite(y) && y > 0) return y;
   return 1;
-};
+}
 
-// Beräkna pris via blandning av typens prisintervall OCH cap rate på nettokassaflöde.
-function calcPriceFromType(tid, units, cond, central) {
+/**
+ * Pris = slump inom TYPE.price * marknad * lägesfaktor * konditionsfaktor
+ * (Enkelt och stabilt mot din TYPE-modell.)
+ */
+function calcPrice(tid, units, cond, central) {
   const t = TYPES[tid] || {};
   const [pmin, pmax] = t.price || [10_000_000, 20_000_000];
-
-  // 1) Intervallpris
-  const baseRange = randInt(Number(pmin), Number(pmax));
-
-  // 2) Kassaflödesvärde (NOI / cap rate)
-  const sqm = Number(t.sqmPerUnit ?? 60) * Number(units || 1);
-  const rentPerSqmYr = Number(t.rentPerSqmYr ?? 1400);
-  const grossRentYr  = sqm * rentPerSqmYr;
-  const maintPerUnit = Number(t.maintUnit ?? 2000);
-  const maintYr = Number(units || 1) * maintPerUnit * Number(condMaintMult?.(cond) ?? 1);
-  const noiYr   = Math.max(0, grossRentYr - maintYr);
-  const cap     = Number(state.capRate ?? 0.045) || 0.045;
-  const cfPrice = Math.round(noiYr / cap);
-
-  // 3) Justeringar
-  const marketMul = Number(state.market ?? 1.0);
-  const locMul    = central ? Number(t.centralMult ?? 1.0) : Number(t.suburbMult ?? 1.0);
-  const condMul   = Number(condFactor?.(cond) ?? 1.0); // ny=1.0, sliten=0.85, förfallen=0.7
-
-  // Blenda 60% intervall, 40% kassaflöde – funkar bra mot dina TYPE-värden
-  const blended = 0.6 * baseRange + 0.4 * cfPrice;
-  const priced  = Math.round(blended * marketMul * locMul * condMul / 1000) * 1000;
+  const base       = randInt(Number(pmin), Number(pmax));
+  const marketMul  = Number(state.market ?? 1.0);
+  const locMul     = central ? Number(t.centralMult ?? 1.0) : Number(t.suburbMult ?? 1.0);
+  const condMul    = Number(condFactor?.(cond) ?? 1.0); // ny=1.0, sliten=0.85, forfallen=0.7
+  const priced     = Math.round(base * marketMul * locMul * condMul / 1000) * 1000;
   return Math.max(priced, 0);
 }
 
@@ -51,12 +38,12 @@ function makeOffer(tid, cond, central) {
   const t = TYPES[tid] || {};
   const [umin, umax] = t.units || [6, 18];
   const units        = randInt(Number(umin), Number(umax));
-  const price        = calcPriceFromType(tid, units, cond, central);
+  const price        = calcPrice(tid, units, cond, central);
 
-  // för UI/ekonomi
-  const sqm = Number(t.sqmPerUnit ?? 60) * units;
-  const grossRentYr  = sqm * Number(t.rentPerSqmYr ?? 1400);
-  const maintYr      = units * Number(t.maintUnit ?? 2000) * Number(condMaintMult?.(cond) ?? 1);
+  // lite ekonomi-info för ev. framtida bruk
+  const sqm           = Number(t.sqmPerUnit ?? 60) * units;
+  const grossRentYr   = sqm * Number(t.rentPerSqmYr ?? 1400);
+  const maintYr       = units * Number(t.maintUnit ?? 2000) * Number(condMaintMult?.(cond) ?? 1);
 
   return {
     id: uuid(),
@@ -66,19 +53,18 @@ function makeOffer(tid, cond, central) {
     cond,                 // 'ny' | 'sliten' | 'forfallen'
     central: !!central,
 
-    // prislapp
     price,
     basePrice: price,
 
-    // ekonomi-info (kan användas senare)
-    rentYr: Math.round(grossRentYr),
-    maintYr: Math.round(maintYr),
-
-    // referenser
+    // referenser/stämpling
     baseUnits: units,
     baseCond: cond,
     baseMarket: Number(state.market ?? 1),
     yearOffered: YEAR_NOW(),
+
+    // ekonomi-info (valfritt)
+    rentYr: Math.round(grossRentYr),
+    maintYr: Math.round(maintYr),
   };
 }
 
@@ -91,8 +77,8 @@ export function generateYearMarket(n = 6) {
   const arr = [];
   for (let i = 0; i < n; i++) {
     const tid = tids.length ? pick(tids) : 'miljon';
-    const cond = pick(CONDITIONS);
-    const central = Math.random() < 0.5;
+    const cond = pick(CONDITIONS);        // 'ny' | 'sliten' | 'forfallen'
+    const central = Math.random() < 0.5;  // 50% central
     arr.push(makeOffer(tid, cond, central));
   }
   state.marketPool = arr.sort((a, b) => a.price - b.price);
@@ -108,7 +94,7 @@ export function ensureMarketForThisYear() {
 
   if (needNew) {
     generateYearMarket(6);
-    note?.(`Nytt marknadsutbud för år ${YEAR_NOW()}.`);
+    try { note?.(`Nytt marknadsutbud för år ${YEAR_NOW()}.`); } catch {}
   }
 }
 
@@ -128,11 +114,11 @@ export function acceptOffer(off, withLoan = false) {
   state.cash = Number(state.cash ?? 0);
 
   if (withLoan) {
-    const down = Math.round(price * 0.30); // 30% egen insats
+    const down = Math.round(price * 0.30); // 30% kontantinsats
     if (state.cash < down) return { ok:false, reason:`Behöver kontantinsats: ${kr(down)}` };
     state.cash -= down;
 
-    // (frivilligt) registrera ett enkelt lån i state.loans
+    // (frivilligt) lägg en enkel lånepost för framtida logik
     try {
       state.loans = state.loans || [];
       state.loans.push({
@@ -148,7 +134,7 @@ export function acceptOffer(off, withLoan = false) {
     state.cash -= price;
   }
 
-  // lägg i owned
+  // Lägg i owned
   const bought = {
     id: uuid(),
     tid: off.tid,
@@ -170,7 +156,7 @@ export function acceptOffer(off, withLoan = false) {
   state.owned = state.owned || [];
   state.owned.push(bought);
 
-  // ta bort från marknaden
+  // Ta bort från marknaden
   removeOfferById(off.id);
 
   // UI
@@ -194,7 +180,7 @@ function offerCard(o) {
       <div>
         <div style="font-weight:800">${o.name} — ${o.units} lgh ${o.central ? '• Central' : ''}</div>
         <div class="meta">Skick: ${o.cond}</div>
-        <div class="meta">Hyra (brutto/år): ${kr(o.rentYr)} • Drift/Underhåll: ${kr(o.maintYr)}</div>
+        <div class="meta">Hyra (brutto/år): ${kr(o.rentYr ?? 0)} • Drift/Underhåll: ${kr(o.maintYr ?? 0)}</div>
         <div class="meta">Pris: <b>${kr(o.price)}</b> • Marknad: ${(state.market ?? 1).toFixed?.(2)}×</div>
       </div>
       <div style="display:grid;gap:6px;justify-items:end">
@@ -213,7 +199,7 @@ function renderOffersInto(container) {
   }
   container.innerHTML = pool.map(offerCard).join('');
 
-  // wire knappar
+  // Wire knappar
   container.querySelectorAll('.offer').forEach(card => {
     const id = card.getAttribute('data-id');
     const off = (state.marketPool || []).find(o => o.id === id);
@@ -268,6 +254,18 @@ export function openMarket() {
 export function closeMarket() {
   const modal = $('#marketModal');
   if (modal) modal.style.display = 'none';
+}
+
+/* ============================
+   Bootstrap: säkerställ utbud vid laddning
+   ============================ */
+try {
+  if (!Array.isArray(state.marketPool) || state.marketPool.length === 0) {
+    generateYearMarket(6);
+    console.info('[market] bootstrapped pool =', state.marketPool.length, 'år =', YEAR_NOW());
+  }
+} catch (e) {
+  console.warn('[market] bootstrap failed', e);
 }
 
 /* ============================
