@@ -5,16 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>TAPAJOS – Det roliga fastighetsbolaget</title>
   <link rel="stylesheet" href="style.css"/>
-
   <style>
     html, body { margin:0; background:#0b1a44; color:#fff; }
     .splash { min-height:100vh; position:relative; z-index:1000; }
-
-    /* Knappar överst och klickbara */
     #startBtn, #openHS, #openHSStart, #openMarket, #openMarketTop {
       position: relative; z-index: 2147483647; pointer-events: auto;
     }
-    /* Döda ev. pseudo-overlays som kan blocka klick */
     .splash::before, .splash::after { content:none !important; pointer-events:none !important; }
   </style>
 </head>
@@ -114,60 +110,44 @@
     </div>
   </div>
 
-  <!-- Modaler (innehåll renderas av JS) -->
-  <div id="marketModal" class="modal">…</div>
-  <div id="negModal" class="modal">…</div>
-  <div id="endModal" class="modal">
+  <!-- Fastighetsmarknad -->
+  <div id="marketModal" class="modal" style="display:none">
     <div class="box">
-      <h3>Spelet är slut</h3>
-      <div id="endSummary">—</div>
-      <div style="margin-top:10px;text-align:right">
-        <button class="btn" onclick="this.closest('.modal').style.display='none'">Stäng</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+        <h3 style="margin:0">Fastighetsmarknad</h3>
+        <button class="btn mini" id="marketCloseBtn"
+                onclick="(window.closeMarket||function(){document.getElementById('marketModal').style.display='none'})()">
+          Stäng
+        </button>
       </div>
+      <div class="offers" id="offers"></div>
     </div>
   </div>
+
+  <!-- Övriga modaler -->
+  <div id="negModal" class="modal">…</div>
+  <div id="endModal" class="modal">…</div>
   <div id="eventModal" class="modal">…</div>
 
-  <!-- Robust wire längst ned -->
+  <!-- Säker wire av knappar -->
   <script>
-    (function () {
-      function fallback() {
-        const s = document.getElementById('splash');
-        const a = document.getElementById('appWrap');
-        if (s) s.style.display = 'none';
-        if (a) a.style.display = 'block';
-        console.warn('[fallback] startGame saknas – visade appen ändå');
-      }
+  (function () {
+    function wire(id, fn){
+      var el = document.getElementById(id);
+      if (!el || el.dataset._wired) return;
+      el.addEventListener('click', function(e){ e.preventDefault(); fn&&fn(); }, {capture:true});
+      el.dataset._wired = '1';
+    }
+    function callOpen(){ window.openMarket?.(); }
+    function callNext(){ window.nextPeriod?.(); }
 
-      // Fånga ALLA klick på startknappen (capturing)
-      window.addEventListener('click', function (e) {
-        const btn = e.target && e.target.closest && e.target.closest('#startBtn');
-        if (!btn) return;
-        e.preventDefault();
-        (window.startGame || fallback)();
-      }, true);
+    wire('startBtn', () => window.startGame?.());
+    wire('openMarketTop', callOpen);
+    wire('openMarket', callOpen);
+    wire('next', callNext);
 
-      // Extra wire när DOM är redo
-      function wire() {
-        const btn = document.getElementById('startBtn');
-        if (btn && !btn.dataset.wired) {
-          btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            (window.startGame || fallback)();
-          }, { capture:true });
-          btn.dataset.wired = '1';
-        }
-        const m1 = document.getElementById('openMarket');
-        const m2 = document.getElementById('openMarketTop');
-        if (m1 && !m1.dataset.wired) { m1.addEventListener('click', () => window.openMarket?.(), { capture:true }); m1.dataset.wired='1'; }
-        if (m2 && !m2.dataset.wired) { m2.addEventListener('click', () => window.openMarket?.(), { capture:true }); m2.dataset.wired='1'; }
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wire, { once:true });
-      } else {
-        wire();
-      }
-    })();
+    try { window.ensureMarketForThisYear && window.ensureMarketForThisYear(); } catch(e){}
+  })();
   </script>
 
   <!-- Ladda Main som ES-modul -->
